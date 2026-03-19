@@ -33,6 +33,7 @@ public class IBMQService {
     public IBMQConnectorResponse executeCircuit(IBMQConnectorRequest request) {
         log.debug("[IBMQService] Received request: {}", request);
         String accessToken = authenticator.getAccessToken(request.getApiKey());
+        log.debug("[IBMQService] Successfully authenticated at IBMQ");
         String jobId = jobClient.submitJob(request, accessToken, parameterHandler.buildParams(request));
         log.debug("[IBMQService] Job submitted: id={} backend={} program={}", jobId, request.getBackend(), request.getProgramId());
 

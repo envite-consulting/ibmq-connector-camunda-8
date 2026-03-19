@@ -19,7 +19,7 @@ import static de.envite.connector.ibmq.IBMQConstants.*;
  * Handles IBM Cloud IAM authentication.
  *
  * <p>Exchanges an IBM Cloud API key for a short-lived IAM bearer token
- * that authorises subsequent calls to the IBM Quantum Runtime API.</p>
+ * that authorizes subsequent calls to the IBM Quantum Runtime API.</p>
  */
 @Slf4j
 @Component

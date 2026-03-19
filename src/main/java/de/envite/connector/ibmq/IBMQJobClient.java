@@ -55,6 +55,7 @@ public class IBMQJobClient {
         jobBody.put(FIELD_PROJECT, instanceParts[2]);
         jobBody.set(FIELD_PARAMS, params);
 
+        log.debug("[IBMQJobClient] Submitting job: URL={}", request.getIbmqUrl() + PATH_JOBS);
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 request.getIbmqUrl() + PATH_JOBS,
                 new HttpEntity<>(jobBody, bearerHeaders(accessToken)),
