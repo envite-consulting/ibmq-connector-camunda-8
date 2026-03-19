@@ -45,10 +45,12 @@ Follow the steps under [How to Run](#-how-to-run), and then, import the file int
 Edit `src/main/resources/application.properties` with your Camunda 8 connection details:
 
 ```properties
-camunda.client.grpc-address=https://<your-zeebe-address>
-camunda.client.rest-address=https://<your-zeebe-rest-address>
+camunda.client.grpc-address=grpcs://<cluster-id>.<region>.zeebe.camunda.io:443
+camunda.client.rest-address=https://<region>.zeebe.camunda.io/<cluster-id>
 camunda.client.auth.client-id=<your-client-id>
 camunda.client.auth.client-secret=<your-client-secret>
+camunda.client.cloud.cluster-id=<cluster-id>
+camunda.client.cloud.region=<region>
 ```
 
 ### 2. Build and Run

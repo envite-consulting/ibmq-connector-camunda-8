@@ -17,7 +17,7 @@
 
     <startEvent id="start" name="Quantum circuit &#10;submitted">
       <extensionElements>
-        <zeebe:formDefinition formKey="camunda-forms:ibmq-input-form" />
+        <zeebe:formDefinition formId="ibmq-input-form" />
       </extensionElements>
       <outgoing>to-quantum</outgoing>
     </startEvent>
@@ -30,21 +30,6 @@
                  zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMiAyMiIgd2lkdGg9IjIyIiBoZWlnaHQ9IjIyIj4KICA8Y2lyY2xlIGN4PSIxMSIgY3k9IjExIiByPSIyLjIiIGZpbGw9IiMwMDQzQ0UiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiIHRyYW5zZm9ybT0icm90YXRlKDYwIDExIDExKSIvPgogIDxlbGxpcHNlIGN4PSIxMSIgY3k9IjExIiByeD0iOSIgcnk9IjMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDA0M0NFIiBzdHJva2Utd2lkdGg9IjEuMiIgdHJhbnNmb3JtPSJyb3RhdGUoMTIwIDExIDExKSIvPgo8L3N2Zz4K">
       <extensionElements>
         <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="3" />
-        <zeebe:ioMapping>
-          <zeebe:input source="apiKey"              target="apiKey" />
-          <zeebe:input source="ibmqUrl"             target="ibmqUrl" />
-          <zeebe:input source="ibmqInstance"        target="ibmqInstance" />
-          <zeebe:input source="backend"             target="backend" />
-          <zeebe:input source="programId"           target="programId" />
-          <zeebe:input source="CircuitInputMode"    target="CircuitInputMode" />
-          <zeebe:input source="circuit"             target="circuit" />
-          <zeebe:input source="qasmVersion"         target="qasmVersion" />
-          <zeebe:input source="shots"               target="shots" />
-          <zeebe:input source="params"              target="params" />
-          <zeebe:input source="waitForResult"       target="waitForResult" />
-          <zeebe:input source="timeoutSeconds"      target="timeoutSeconds" />
-          <zeebe:input source="pollIntervalSeconds" target="pollIntervalSeconds" />
-        </zeebe:ioMapping>
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="ibmqResult" />
           <zeebe:header key="resultExpression" value="= {jobId: response.jobId, status: response.status, result: response.result}" />
@@ -59,7 +44,7 @@
     <userTask id="review-task" name="Review&#10;quantum result">
       <extensionElements>
         <zeebe:userTask />
-        <zeebe:formDefinition formKey="camunda-forms:ibmq-result-form" />
+        <zeebe:formDefinition formId="ibmq-result-form" />
       </extensionElements>
       <incoming>to-review</incoming>
       <outgoing>to-end</outgoing>

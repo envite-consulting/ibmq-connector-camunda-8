@@ -41,10 +41,10 @@
     },
     {
       "label": "IBMQ URL",
-      "description": "IBMQ endpoint, e.g., https://us-east.quantum-computing.ibm.com",
+      "description": "IBMQ endpoint, e.g., https://quantum.ibm.com",
       "group": "ibmq",
       "type": "String",
-      "value": "https://us-east.quantum-computing.ibm.com",
+      "value": "https://quantum.ibm.com",
       "feel": "optional",
       "binding": { "type": "zeebe:input", "name": "ibmqUrl" }
     },

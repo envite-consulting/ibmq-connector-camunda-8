@@ -14,7 +14,7 @@
       "type": "textfield",
       "key": "ibmqUrl",
       "label": "IBMQ URL",
-      "defaultValue": "https://us-east.quantum-computing.ibm.com"
+      "defaultValue": "https://quantum.ibm.com"
     },
     {
       "type": "textfield",

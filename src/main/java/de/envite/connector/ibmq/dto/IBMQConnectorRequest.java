@@ -23,9 +23,9 @@ public class IBMQConnectorRequest {
 
     /**
      * IBM Quantum service base URL.
-     * Defaults to the US-East Qiskit Runtime endpoint.
+     * Defaults to the IBM Quantum Platform endpoint.
      */
-    private String ibmqUrl = "https://us-east.quantum-computing.ibm.com";
+    private String ibmqUrl = "https://quantum.ibm.com";
 
     /**
      * IBM Quantum instance in <code>hub/group/project</code> format,
