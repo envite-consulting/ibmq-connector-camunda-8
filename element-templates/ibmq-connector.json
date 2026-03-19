@@ -1,0 +1,232 @@
+{
+  "$schema": "https://unpkg.com/@camunda/zeebe-element-templates-json-schema/resources/schema.json",
+  "name": "IBM Quantum Connector",
+  "id": "de.envite.ibmq-connector",
+  "description": "Execute quantum circuits on IBM Quantum via the Qiskit Runtime REST API.",
+  "version": 1,
+  "documentationRef": "https://github.com/envite/ibmq-connector-camunda-8",
+  "category": {
+    "id": "connectors",
+    "name": "Connectors"
+  },
+  "icon": {
+    "contents": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMiAyMiIgd2lkdGg9IjIyIiBoZWlnaHQ9IjIyIj4KICA8Y2lyY2xlIGN4PSIxMSIgY3k9IjExIiByPSIyLjIiIGZpbGw9IiMwMDQzQ0UiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiIHRyYW5zZm9ybT0icm90YXRlKDYwIDExIDExKSIvPgogIDxlbGxpcHNlIGN4PSIxMSIgY3k9IjExIiByeD0iOSIgcnk9IjMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDA0M0NFIiBzdHJva2Utd2lkdGg9IjEuMiIgdHJhbnNmb3JtPSJyb3RhdGUoMTIwIDExIDExKSIvPgo8L3N2Zz4K"
+  },
+  "appliesTo": ["bpmn:ServiceTask"],
+  "elementType": {
+    "value": "bpmn:ServiceTask"
+  },
+  "groups": [
+    { "id": "ibmq",           "label": "IBMQ" },
+    { "id": "circuit",        "label": "Quantum Circuit" },
+    { "id": "execution",      "label": "Execution" },
+    { "id": "output",         "label": "Output Mapping" },
+    { "id": "error",          "label": "Error Handling" }
+  ],
+  "properties": [
+    {
+      "type": "Hidden",
+      "value": "de.envite:ibmq-connector:1",
+      "binding": { "type": "zeebe:taskDefinition", "property": "type" }
+    },
+
+    {
+      "label": "IBMQ API Key",
+      "description": "Use a Camunda secret: <code>{{secrets.IBMQ_API_KEY}}</code>",
+      "group": "ibmq",
+      "type": "String",
+      "feel": "optional",
+      "binding": { "type": "zeebe:input", "name": "apiKey" },
+      "constraints": { "notEmpty": true }
+    },
+    {
+      "label": "IBMQ URL",
+      "description": "IBMQ endpoint, e.g., https://us-east.quantum-computing.ibm.com",
+      "group": "ibmq",
+      "type": "String",
+      "value": "https://us-east.quantum-computing.ibm.com",
+      "feel": "optional",
+      "binding": { "type": "zeebe:input", "name": "ibmqUrl" }
+    },
+    {
+      "label": "IBMQ Instance",
+      "description": "IBMQ instance in hub/group/project format, e.g. ibm-q/open/main",
+      "group": "ibmq",
+      "type": "String",
+      "feel": "optional",
+      "binding": { "type": "zeebe:input", "name": "ibmqInstance" },
+      "constraints": { "notEmpty": true }
+    },
+
+    {
+      "label": "IBMQ Backend",
+      "description": "Target quantum computer for the execution",
+      "group": "ibmq",
+      "type": "Dropdown",
+      "value": "ibmq_qasm_simulator",
+      "choices": [
+        { "name": "QASM Simulator",  "value": "ibmq_qasm_simulator" },
+        { "name": "IBM Brisbane",    "value": "ibm_brisbane" },
+        { "name": "IBM Kyoto",       "value": "ibm_kyoto" },
+        { "name": "IBM Osaka",       "value": "ibm_osaka" },
+        { "name": "Custom (FEEL)",   "value": "custom" }
+      ],
+      "binding": { "type": "zeebe:input", "name": "backend" },
+      "constraints": { "notEmpty": true }
+    },
+
+    {
+      "id": "programId",
+      "label": "Program ID",
+      "description": "Qiskit Runtime program to execute. Use Sampler to directly execute <em>OpenQASM</em> quantum circuits.",
+      "group": "circuit",
+      "type": "Dropdown",
+      "value": "sampler",
+      "choices": [
+        { "name": "Sampler",   "value": "sampler" },
+        { "name": "Estimator", "value": "estimator" }
+      ],
+      "binding": { "type": "zeebe:input", "name": "programId" },
+      "constraints": { "notEmpty": true }
+    },
+    {
+      "id": "circuitInputMode",
+      "label": "Circuit Input Mode",
+      "description": "How the quantum circuit is supplied. Use <em>OpenQASM</em> to enter a circuit string directly, or <em>Direct Params</em> for full control over the Qiskit Runtime job params.",
+      "group": "circuit",
+      "type": "Dropdown",
+      "value": "OPEN_QASM",
+      "choices": [
+        { "name": "OpenQASM (2 or 3)",    "value": "OPEN_QASM" },
+        { "name": "Direct Params (JSON)", "value": "DIRECT_PARAMS" }
+      ],
+      "binding": { "type": "zeebe:input", "name": "circuitInputMode" },
+      "condition": { "property": "programId", "equals": "sampler" }
+    },
+    {
+      "label": "Quantum Circuit (OpenQASM)",
+      "description": "OpenQASM 2 or 3 circuit string. The connector wraps it in a Sampler V2 PUB automatically.",
+      "group": "circuit",
+      "type": "Text",
+      "feel": "optional",
+      "binding": { "type": "zeebe:input", "name": "circuit" },
+      "constraints": { "notEmpty": true },
+      "condition": {
+        "allMatch": [
+          { "property": "programId",       "equals": "sampler"    },
+          { "property": "circuitInputMode", "equals": "OPEN_QASM" }
+        ]
+      }
+    },
+    {
+      "label": "OpenQASM Version",
+      "description": "Version of the supplied circuit. OpenQASM 3 is preferred; most backends also accept OpenQASM 2.",
+      "group": "circuit",
+      "type": "Dropdown",
+      "value": "3",
+      "choices": [
+        { "name": "OpenQASM 3 (recommended)", "value": "3" },
+        { "name": "OpenQASM 2",               "value": "2" }
+      ],
+      "binding": { "type": "zeebe:input", "name": "qasmVersion" },
+      "condition": {
+        "allMatch": [
+          { "property": "programId",       "equals": "sampler"    },
+          { "property": "circuitInputMode", "equals": "OPEN_QASM" }
+        ]
+      }
+    },
+    {
+      "label": "Shots",
+      "description": "Number of circuit repetitions",
+      "group": "circuit",
+      "type": "Number",
+      "value": 1024,
+      "binding": { "type": "zeebe:input", "name": "shots" },
+      "condition": {
+        "allMatch": [
+          { "property": "programId",       "equals": "sampler"    },
+          { "property": "circuitInputMode", "equals": "OPEN_QASM" }
+        ]
+      }
+    },
+    {
+      "label": "Params (JSON)",
+      "description": "Full Qiskit Runtime job params as a JSON string, e.g. {\"pubs\": [[\"&lt;circuit&gt;\", null, 1024]]}. See <a href=\"https://quantum.cloud.ibm.com/docs/guides/primitives-rest-api\">Primitives with REST API</a> for details.",
+      "group": "circuit",
+      "type": "Text",
+      "feel": "optional",
+      "binding": { "type": "zeebe:input", "name": "params" },
+      "constraints": { "notEmpty": true },
+      "condition": { "property": "programId", "equals": "estimator" }
+    },
+    {
+      "label": "Params (JSON)",
+      "description": "Full Qiskit Runtime job params as a JSON string, e.g. {\"pubs\": [[\"&lt;circuit&gt;\", null, 1024]]}. See <a href=\"https://quantum.cloud.ibm.com/docs/guides/primitives-rest-api\">Primitives with REST API</a> for details.",
+      "group": "circuit",
+      "type": "Text",
+      "feel": "optional",
+      "binding": { "type": "zeebe:input", "name": "params" },
+      "constraints": { "notEmpty": true },
+      "condition": {
+        "allMatch": [
+          { "property": "programId",        "equals": "sampler"       },
+          { "property": "circuitInputMode",  "equals": "DIRECT_PARAMS" }
+        ]
+      }
+    },
+
+    {
+      "label": "Wait for Result",
+      "description": "Poll until the job reaches a terminal state before completing the task",
+      "group": "execution",
+      "type": "Boolean",
+      "value": "true",
+      "binding": { "type": "zeebe:input", "name": "waitForResult" }
+    },
+    {
+      "label": "Timeout (seconds)",
+      "description": "Maximum time to wait for a result",
+      "group": "execution",
+      "type": "Number",
+      "value": 300,
+      "binding": { "type": "zeebe:input", "name": "timeoutSeconds" }
+    },
+    {
+      "label": "Poll Interval (seconds)",
+      "description": "How often to check the job status",
+      "group": "execution",
+      "type": "Number",
+      "value": 5,
+      "binding": { "type": "zeebe:input", "name": "pollIntervalSeconds" }
+    },
+
+    {
+      "label": "Result Variable",
+      "description": "Name of the process variable to store the connector result",
+      "group": "output",
+      "type": "String",
+      "value": "ibmqResult",
+      "binding": { "type": "zeebe:taskHeader", "key": "resultVariable" }
+    },
+    {
+      "label": "Result Expression",
+      "description": "FEEL expression to map the result into process variables",
+      "group": "output",
+      "type": "Text",
+      "feel": "required",
+      "value": "= {jobId: response.jobId, status: response.status, result: response.result}",
+      "binding": { "type": "zeebe:taskHeader", "key": "resultExpression" }
+    },
+
+    {
+      "label": "Error Expression",
+      "description": "FEEL expression to handle connector errors as BPMN errors",
+      "group": "error",
+      "type": "Text",
+      "feel": "required",
+      "optional": true,
+      "binding": { "type": "zeebe:taskHeader", "key": "errorExpression" }
+    }
+  ]
+}

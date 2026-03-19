@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+
+  <process id="ibmq-circuit-execution" name="IBM Quantum Circuit Execution" isExecutable="true">
+
+    <startEvent id="start" name="Start"/>
+
+    <sequenceFlow id="to-ibmq" sourceRef="start" targetRef="ibmq-task"/>
+
+    <serviceTask id="ibmq-task" name="Execute Quantum Circuit">
+      <extensionElements>
+        <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="1"/>
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="ibmqResult"/>
+        </zeebe:taskHeaders>
+      </extensionElements>
+    </serviceTask>
+
+    <sequenceFlow id="to-end" sourceRef="ibmq-task" targetRef="end"/>
+
+    <endEvent id="end" name="End"/>
+
+  </process>
+
+</definitions>

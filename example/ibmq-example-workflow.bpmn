@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+             xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://bpmn.io/schema/bpmn"
+             modeler:executionPlatform="Camunda Cloud"
+             modeler:executionPlatformVersion="8.8.0">
+
+  <process id="ibmq-example-workflow" name="IBM Quantum Example Workflow" isExecutable="true">
+
+    <extensionElements>
+      <zeebe:userTaskForm id="ibmq-input-form">{
+  "id": "ibmq-input-form",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textfield",
+      "key": "apiKey",
+      "label": "IBM Quantum API Key",
+      "description": "Use a Camunda secret: {{secrets.IBMQ_API_KEY}}",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqUrl",
+      "label": "IBMQ URL",
+      "defaultValue": "https://us-east.quantum-computing.ibm.com"
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqInstance",
+      "label": "IBMQ Instance",
+      "description": "hub/group/project format, e.g. ibm-q/open/main",
+      "defaultValue": "ibm-q/open/main",
+      "validate": { "required": true }
+    },
+    {
+      "type": "select",
+      "key": "backend",
+      "label": "Backend",
+      "defaultValue": "ibmq_qasm_simulator",
+      "values": [
+        { "label": "QASM Simulator",  "value": "ibmq_qasm_simulator" },
+        { "label": "IBM Brisbane",    "value": "ibm_brisbane" },
+        { "label": "IBM Kyoto",       "value": "ibm_kyoto" },
+        { "label": "IBM Osaka",       "value": "ibm_osaka" }
+      ]
+    },
+    {
+      "type": "select",
+      "key": "programId",
+      "label": "Program ID",
+      "defaultValue": "sampler",
+      "values": [
+        { "label": "Sampler",   "value": "sampler" },
+        { "label": "Estimator", "value": "estimator" }
+      ]
+    },
+    {
+      "type": "select",
+      "key": "circuitInputMode",
+      "label": "Circuit Input Mode",
+      "defaultValue": "OPEN_QASM",
+      "values": [
+        { "label": "OpenQASM (2 or 3)",    "value": "OPEN_QASM" },
+        { "label": "Direct Params (JSON)", "value": "DIRECT_PARAMS" }
+      ]
+    },
+    {
+      "type": "textarea",
+      "key": "circuit",
+      "label": "Quantum Circuit (OpenQASM)",
+      "description": "OpenQASM 2 or 3 circuit string. Required when Circuit Input Mode is OpenQASM."
+    },
+    {
+      "type": "number",
+      "key": "shots",
+      "label": "Shots",
+      "defaultValue": 1024,
+      "description": "Number of circuit repetitions. Used in OpenQASM mode only."
+    },
+    {
+      "type": "textarea",
+      "key": "params",
+      "label": "Params (JSON)",
+      "description": "Full Qiskit Runtime job params as JSON. Required when Circuit Input Mode is Direct Params or Program ID is Estimator."
+    },
+    {
+      "type": "number",
+      "key": "timeoutSeconds",
+      "label": "Timeout (seconds)",
+      "defaultValue": 300
+    },
+    {
+      "type": "number",
+      "key": "pollIntervalSeconds",
+      "label": "Poll Interval (seconds)",
+      "defaultValue": 5
+    }
+  ]
+}</zeebe:userTaskForm>
+
+      <zeebe:userTaskForm id="ibmq-result-form">{
+  "id": "ibmq-result-form",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textfield",
+      "key": "ibmqResult.jobId",
+      "label": "Job ID",
+      "readonly": true
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqResult.status",
+      "label": "Status",
+      "readonly": true
+    },
+    {
+      "type": "textarea",
+      "key": "ibmqResult.result",
+      "label": "Result",
+      "readonly": true
+    }
+  ]
+}</zeebe:userTaskForm>
+    </extensionElements>
+
+    <startEvent id="start" name="Quantum circuit &#10;submitted">
+      <extensionElements>
+        <zeebe:formDefinition formKey="camunda-forms:bpmn:ibmq-input-form" />
+      </extensionElements>
+      <outgoing>to-quantum</outgoing>
+    </startEvent>
+
+    <sequenceFlow id="to-quantum" sourceRef="start" targetRef="quantum-task" />
+
+    <serviceTask id="quantum-task" name="Execute&#10;quantum circuit"
+                 zeebe:modelerTemplate="de.envite.ibmq-connector"
+                 zeebe:modelerTemplateVersion="1"
+                 zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMiAyMiIgd2lkdGg9IjIyIiBoZWlnaHQ9IjIyIj4KICA8Y2lyY2xlIGN4PSIxMSIgY3k9IjExIiByPSIyLjIiIGZpbGw9IiMwMDQzQ0UiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiIHRyYW5zZm9ybT0icm90YXRlKDYwIDExIDExKSIvPgogIDxlbGxpcHNlIGN4PSIxMSIgY3k9IjExIiByeD0iOSIgcnk9IjMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDA0M0NFIiBzdHJva2Utd2lkdGg9IjEuMiIgdHJhbnNmb3JtPSJyb3RhdGUoMTIwIDExIDExKSIvPgo8L3N2Zz4K">
+      <extensionElements>
+        <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="apiKey"              target="apiKey" />
+          <zeebe:input source="ibmqUrl"             target="ibmqUrl" />
+          <zeebe:input source="ibmqInstance"        target="ibmqInstance" />
+          <zeebe:input source="backend"             target="backend" />
+          <zeebe:input source="programId"           target="programId" />
+          <zeebe:input source="circuitInputMode"    target="circuitInputMode" />
+          <zeebe:input source="circuit"             target="circuit" />
+          <zeebe:input source="qasmVersion"         target="qasmVersion" />
+          <zeebe:input source="shots"               target="shots" />
+          <zeebe:input source="params"              target="params" />
+          <zeebe:input source="waitForResult"       target="waitForResult" />
+          <zeebe:input source="timeoutSeconds"      target="timeoutSeconds" />
+          <zeebe:input source="pollIntervalSeconds" target="pollIntervalSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="ibmqResult" />
+          <zeebe:header key="resultExpression" value="= {jobId: response.jobId, status: response.status, result: response.result}" />
+        </zeebe:taskHeaders>
+      </extensionElements>
+      <incoming>to-quantum</incoming>
+      <outgoing>to-review</outgoing>
+    </serviceTask>
+
+    <sequenceFlow id="to-review" sourceRef="quantum-task" targetRef="review-task" />
+
+    <userTask id="review-task" name="Review&#10;quantum result">
+      <extensionElements>
+        <zeebe:formDefinition formKey="camunda-forms:bpmn:ibmq-result-form" />
+      </extensionElements>
+      <incoming>to-review</incoming>
+      <outgoing>to-end</outgoing>
+    </userTask>
+
+    <sequenceFlow id="to-end" sourceRef="review-task" targetRef="end" />
+
+    <endEvent id="end" name="Quantum circuit &#10;executed">
+      <incoming>to-end</incoming>
+    </endEvent>
+
+  </process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="ibmq-example-workflow">
+
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="162" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="138" y="142" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="quantum-task_di" bpmnElement="quantum-task">
+        <dc:Bounds x="260" y="77" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="review-task_di" bpmnElement="review-task">
+        <dc:Bounds x="430" y="77" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+        <dc:Bounds x="602" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="610" y="142" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="to-quantum_di" bpmnElement="to-quantum">
+        <di:waypoint x="198" y="117" />
+        <di:waypoint x="260" y="117" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-review_di" bpmnElement="to-review">
+        <di:waypoint x="360" y="117" />
+        <di:waypoint x="430" y="117" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-end_di" bpmnElement="to-end">
+        <di:waypoint x="530" y="117" />
+        <di:waypoint x="602" y="117" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</definitions>
