@@ -1,5 +1,6 @@
 package de.envite.connector.ibmq.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.envite.connector.ibmq.CircuitInputMode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -52,6 +53,7 @@ public class IBMQConnectorRequest {
      * </ul>
      */
     @NotNull
+    @JsonProperty("CircuitInputMode")
     private CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
 
     /**
@@ -68,14 +70,14 @@ public class IBMQConnectorRequest {
      *   <li>{@code 3} – OpenQASM 3.0 (preferred for modern IBM Quantum backends)</li>
      * </ul>
      */
-    private int qasmVersion = 3;
+    private Integer qasmVersion = 3;
 
     /**
      * Number of shots (circuit repetitions) when using {@link CircuitInputMode#OPEN_QASM}.
      * Ignored in {@link CircuitInputMode#DIRECT_PARAMS} mode.
      */
     @Min(1)
-    private int shots = 1024;
+    private Integer shots = 1024;
 
     /**
      * Full Qiskit Runtime job params as a JSON string.
@@ -86,13 +88,13 @@ public class IBMQConnectorRequest {
     private String params;
 
     /** When <code>true</code> the connector polls until the job reaches a terminal state. */
-    private boolean waitForResult = true;
+    private Boolean waitForResult = true;
 
     /** Maximum time in seconds to wait for a result before failing. */
     @Min(1)
-    private int timeoutSeconds = 300;
+    private Integer timeoutSeconds = 300;
 
     /** Polling interval in seconds when <code>waitForResult</code> is <code>true</code>. */
     @Min(1)
-    private int pollIntervalSeconds = 5;
+    private Integer pollIntervalSeconds = 5;
 }

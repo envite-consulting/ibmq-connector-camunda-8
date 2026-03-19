@@ -100,7 +100,7 @@
         { "name": "OpenQASM (2 or 3)",    "value": "OPEN_QASM" },
         { "name": "Direct Params (JSON)", "value": "DIRECT_PARAMS" }
       ],
-      "binding": { "type": "zeebe:input", "name": "circuitInputMode" },
+      "binding": { "type": "zeebe:input", "name": "CircuitInputMode" },
       "condition": { "property": "programId", "equals": "sampler" }
     },
     {

@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
                 "ibmqInstance",
                 "backend",
                 "programId",
-                "circuitInputMode",
+                "CircuitInputMode",
                 "circuit",
                 "qasmVersion",
                 "shots",

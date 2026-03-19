@@ -1,0 +1,25 @@
+{
+  "id": "ibmq-result-form",
+  "type": "default",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textfield",
+      "key": "ibmqResult.jobId",
+      "label": "Job ID",
+      "readonly": true
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqResult.status",
+      "label": "Status",
+      "readonly": true
+    },
+    {
+      "type": "textarea",
+      "key": "ibmqResult.result",
+      "label": "Result",
+      "readonly": true
+    }
+  ]
+}
