@@ -120,7 +120,7 @@ public class IBMQJobClient {
                 new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
                 JsonNode.class
         );
-        return requireBody(response, "job status").get(FIELD_STATUS).asText();
+        return requireBody(response, "job status").get(FIELD_STATUS).asText().toUpperCase();
     }
 
     private HttpHeaders apiHeaders(String accessToken, String instanceCrn) {
