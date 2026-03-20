@@ -5,7 +5,7 @@ public final class IBMQConstants {
     private IBMQConstants() {}
 
     // -------------------------------------------------------------------------
-    // IAM authentication
+    // IBM Cloud IAM authentication
     // -------------------------------------------------------------------------
 
     public static final String IAM_TOKEN_URL        = "https://iam.cloud.ibm.com/identity/token";
@@ -13,6 +13,14 @@ public final class IBMQConstants {
     public static final String IAM_GRANT_TYPE_VALUE = "urn:ibm:params:oauth:grant-type:apikey";
     public static final String IAM_APIKEY_KEY       = "apikey";
     public static final String IAM_ACCESS_TOKEN     = "access_token";
+
+    // -------------------------------------------------------------------------
+    // Required request headers
+    // -------------------------------------------------------------------------
+
+    public static final String HEADER_SERVICE_CRN     = "Service-CRN";
+    public static final String HEADER_IBM_API_VERSION = "IBM-API-Version";
+    public static final String IBM_API_VERSION        = "2024-11-30";
 
     // -------------------------------------------------------------------------
     // API paths
@@ -27,9 +35,6 @@ public final class IBMQConstants {
 
     public static final String FIELD_PROGRAM_ID = "program_id";
     public static final String FIELD_BACKEND    = "backend";
-    public static final String FIELD_HUB        = "hub";
-    public static final String FIELD_GROUP      = "group";
-    public static final String FIELD_PROJECT    = "project";
     public static final String FIELD_PARAMS     = "params";
 
     // -------------------------------------------------------------------------

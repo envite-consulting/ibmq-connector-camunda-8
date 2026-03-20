@@ -14,27 +14,21 @@
       "type": "textfield",
       "key": "ibmqUrl",
       "label": "IBMQ URL",
-      "defaultValue": "https://quantum.ibm.com"
+      "defaultValue": "https://quantum.cloud.ibm.com/api"
     },
     {
       "type": "textfield",
       "key": "ibmqInstance",
-      "label": "IBMQ Instance",
-      "description": "hub/group/project format, e.g. ibm-q/open/main",
-      "defaultValue": "ibm-q/open/main",
+      "label": "IBMQ Instance CRN",
+      "description": "Cloud Resource Name (CRN). Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.",
       "validate": { "required": true }
     },
     {
-      "type": "select",
+      "type": "textfield",
       "key": "backend",
       "label": "Backend",
-      "defaultValue": "ibmq_qasm_simulator",
-      "values": [
-        { "label": "QASM Simulator",  "value": "ibmq_qasm_simulator" },
-        { "label": "IBM Brisbane",    "value": "ibm_brisbane" },
-        { "label": "IBM Kyoto",       "value": "ibm_kyoto" },
-        { "label": "IBM Osaka",       "value": "ibm_osaka" }
-      ]
+      "description": "Name of the quantum backend to use, e.g. ibm_brisbane. Run GET /v1/backends with your CRN to list available backends.",
+      "validate": { "required": true }
     },
     {
       "type": "select",

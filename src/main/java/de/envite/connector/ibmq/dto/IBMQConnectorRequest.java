@@ -25,11 +25,11 @@ public class IBMQConnectorRequest {
      * IBM Quantum service base URL.
      * Defaults to the IBM Quantum Platform endpoint.
      */
-    private String ibmqUrl = "https://quantum.ibm.com";
+    private String ibmqUrl = "https://quantum.cloud.ibm.com/api";
 
     /**
-     * IBM Quantum instance in <code>hub/group/project</code> format,
-     * e.g. <code>ibm-q/open/main</code>.
+     * IBM Quantum instance Cloud Resource Name (CRN).
+     * Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.
      */
     @NotEmpty
     private String ibmqInstance;

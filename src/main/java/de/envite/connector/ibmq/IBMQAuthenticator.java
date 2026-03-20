@@ -1,8 +1,8 @@
 package de.envite.connector.ibmq;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -22,18 +22,11 @@ import static de.envite.connector.ibmq.IBMQConstants.*;
  * that authorizes subsequent calls to the IBM Quantum Runtime API.</p>
  */
 @Slf4j
+@AllArgsConstructor
 @Component
 public class IBMQAuthenticator {
 
     private final RestTemplate restTemplate;
-    private final String iamUrl;
-
-    public IBMQAuthenticator(
-            RestTemplate restTemplate,
-            @Value("${ibmq.iam-url:" + IAM_TOKEN_URL + "}") String iamUrl) {
-        this.restTemplate = restTemplate;
-        this.iamUrl = iamUrl;
-    }
 
     /**
      * Exchanges an IBM Cloud API key for an IAM bearer access token.
@@ -49,14 +42,14 @@ public class IBMQAuthenticator {
         body.add(IAM_GRANT_TYPE_KEY, IAM_GRANT_TYPE_VALUE);
         body.add(IAM_APIKEY_KEY, apiKey);
 
-        log.debug("[IBMQAuthenticator] Exchanging API key for IAM access token");
+        log.debug("[IBMQAuthenticator] Exchanging IBM Cloud API key for IAM access token");
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                iamUrl,
+                IAM_TOKEN_URL,
                 new HttpEntity<>(body, headers),
                 JsonNode.class
         );
 
-        JsonNode responseBody = requireBody(response, "IAM token exchange");
+        JsonNode responseBody = requireBody(response, "IBM Cloud IAM token exchange");
         return responseBody.get(IAM_ACCESS_TOKEN).asText();
     }
 }

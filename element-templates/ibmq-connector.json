@@ -41,16 +41,16 @@
     },
     {
       "label": "IBMQ URL",
-      "description": "IBMQ endpoint, e.g., https://quantum.ibm.com",
+      "description": "IBMQ endpoint, e.g., https://quantum.cloud.ibm.com/api",
       "group": "ibmq",
       "type": "String",
-      "value": "https://quantum.ibm.com",
+      "value": "https://quantum.cloud.ibm.com/api",
       "feel": "optional",
       "binding": { "type": "zeebe:input", "name": "ibmqUrl" }
     },
     {
-      "label": "IBMQ Instance",
-      "description": "IBMQ instance in hub/group/project format, e.g. ibm-q/open/main",
+      "label": "IBMQ Instance CRN",
+      "description": "IBM Quantum instance Cloud Resource Name (CRN). Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.",
       "group": "ibmq",
       "type": "String",
       "feel": "optional",

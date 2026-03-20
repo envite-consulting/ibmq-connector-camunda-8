@@ -44,7 +44,7 @@ public class IBMQService {
 
         String status = jobClient.pollUntilTerminal(request, accessToken, jobId);
         log.debug("[IBMQService] Job reached terminal state: id={} status={}", jobId, status);
-        Object result = STATUS_COMPLETED.equals(status) ? jobClient.getJobResults(request.getIbmqUrl(), accessToken, jobId) : null;
+        Object result = STATUS_COMPLETED.equals(status) ? jobClient.getJobResults(request, accessToken, jobId) : null;
 
         return new IBMQConnectorResponse(jobId, status, result);
     }

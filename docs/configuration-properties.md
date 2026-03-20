@@ -7,8 +7,8 @@ The connector provides the following configuration properties to enable executin
 | Field | Description | Default |
 |---|---|---|
 | **IBMQ API Key** | IBM Cloud API key. Use a Camunda secret: `{{secrets.IBMQ_API_KEY}}` | — |
-| **IBMQ URL** | IBMQ endpoint | `https://quantum.ibm.com` |
-| **IBMQ Instance** | Instance in `hub/group/project` format, e.g. `ibm-q/open/main` | — |
+| **IBMQ URL** | IBMQ endpoint | `https://quantum.cloud.ibm.com/api` |
+| **IBMQ Instance CRN** | IBM Quantum instance Cloud Resource Name (CRN). Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details. | — |
 | **IBMQ Backend** | Target quantum computer | `ibmq_qasm_simulator` |
 
 ### Quantum Circuit
