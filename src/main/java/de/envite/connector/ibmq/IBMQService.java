@@ -21,7 +21,7 @@ public class IBMQService {
     /**
      * Authenticates with IBM Cloud, submits a Qiskit Runtime job, and optionally waits for its result.
      *
-     * <p>When {@link IBMQConnectorRequest#isWaitForResult()} is {@code false}, the job is submitted
+     * <p>When {@link IBMQConnectorRequest#getWaitForResult()} is {@code false}, the job is submitted
      * and the response is returned immediately with status {@code QUEUED} and no result payload.
      * Otherwise, the method polls until the job reaches a terminal state or the configured timeout
      * is exceeded.</p>
@@ -33,17 +33,18 @@ public class IBMQService {
     public IBMQConnectorResponse executeCircuit(IBMQConnectorRequest request) {
         log.debug("[IBMQService] Received request: {}", request);
         String accessToken = authenticator.getAccessToken(request.getApiKey());
+        log.debug("[IBMQService] Successfully authenticated at IBMQ");
         String jobId = jobClient.submitJob(request, accessToken, parameterHandler.buildParams(request));
         log.debug("[IBMQService] Job submitted: id={} backend={} program={}", jobId, request.getBackend(), request.getProgramId());
 
-        if (!request.isWaitForResult()) {
+        if (!request.getWaitForResult()) {
             log.debug("[IBMQService] waitForResult=false, returning immediately with status QUEUED");
             return new IBMQConnectorResponse(jobId, STATUS_QUEUED, null);
         }
 
         String status = jobClient.pollUntilTerminal(request, accessToken, jobId);
         log.debug("[IBMQService] Job reached terminal state: id={} status={}", jobId, status);
-        Object result = STATUS_COMPLETED.equals(status) ? jobClient.getJobResults(request.getIbmqUrl(), accessToken, jobId) : null;
+        Object result = STATUS_COMPLETED.equals(status) ? jobClient.getJobResults(request, accessToken, jobId) : null;
 
         return new IBMQConnectorResponse(jobId, status, result);
     }

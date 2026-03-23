@@ -102,7 +102,7 @@ class IBMQConnectorFunctionTest {
     private IBMQConnectorRequest buildOpenQasmRequest() {
         IBMQConnectorRequest request = new IBMQConnectorRequest();
         request.setApiKey("test-key");
-        request.setIbmqUrl("https://us-east.quantum-computing.ibm.com");
+        request.setIbmqUrl("https://quantum.cloud.ibm.com/api");
         request.setIbmqInstance("ibm-q/open/main");
         request.setBackend("ibmq_qasm_simulator");
         request.setProgramId(PROGRAM_SAMPLER);
@@ -118,7 +118,7 @@ class IBMQConnectorFunctionTest {
     private IBMQConnectorRequest buildDirectParamsRequest() {
         IBMQConnectorRequest request = new IBMQConnectorRequest();
         request.setApiKey("test-key");
-        request.setIbmqUrl("https://us-east.quantum-computing.ibm.com");
+        request.setIbmqUrl("https://quantum.cloud.ibm.com/api");
         request.setIbmqInstance("ibm-q/open/main");
         request.setBackend("ibmq_qasm_simulator");
         request.setProgramId(PROGRAM_SAMPLER);

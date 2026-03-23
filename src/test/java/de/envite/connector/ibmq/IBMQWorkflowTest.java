@@ -40,10 +40,12 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 @SpringBootTest
 class IBMQWorkflowTest {
 
-    private static final String SERVICE_URL = "https://test.quantum-computing.ibm.com";
+    private static final String SERVICE_URL  = "https://test.quantum-computing.ibm.com";
+    private static final String API_KEY      = "test-api-key";
     private static final String ACCESS_TOKEN = "test-access-token";
-    private static final String JOB_ID = "workflow-job-001";
-    private static final String CIRCUIT = "OPENQASM 3.0; qubit[1] q; h q[0];";
+    private static final String INSTANCE_CRN = "crn:v1:bluemix:public:quantum-computing:us-east:a/test-account/test-instance::";
+    private static final String JOB_ID       = "workflow-job-001";
+    private static final String CIRCUIT      = "OPENQASM 3.0; qubit[1] q; h q[0];";
 
     @Autowired
     private CamundaClient camundaClient;
@@ -76,12 +78,12 @@ class IBMQWorkflowTest {
         expectJobResults(JOB_ID);
 
         ProcessInstanceEvent instance = startProcess(Map.ofEntries(
-                Map.entry("apiKey",              "test-api-key"),
+                Map.entry("apiKey",              API_KEY),
                 Map.entry("ibmqUrl",             SERVICE_URL),
-                Map.entry("ibmqInstance",        "ibm-q/open/main"),
+                Map.entry("ibmqInstance",        INSTANCE_CRN),
                 Map.entry("backend",             "ibmq_qasm_simulator"),
                 Map.entry("programId",           PROGRAM_SAMPLER),
-                Map.entry("circuitInputMode",    "OPEN_QASM"),
+                Map.entry("CircuitInputMode",    "OPEN_QASM"),
                 Map.entry("circuit",             CIRCUIT),
                 Map.entry("shots",               1024),
                 Map.entry("waitForResult",       true),
@@ -102,12 +104,12 @@ class IBMQWorkflowTest {
         expectJobResults(JOB_ID);
 
         ProcessInstanceEvent instance = startProcess(Map.ofEntries(
-                Map.entry("apiKey",              "test-api-key"),
+                Map.entry("apiKey",              API_KEY),
                 Map.entry("ibmqUrl",             SERVICE_URL),
-                Map.entry("ibmqInstance",        "ibm-q/open/main"),
+                Map.entry("ibmqInstance",        INSTANCE_CRN),
                 Map.entry("backend",             "ibm_brisbane"),
                 Map.entry("programId",           PROGRAM_ESTIMATOR),
-                Map.entry("circuitInputMode",    "DIRECT_PARAMS"),
+                Map.entry("CircuitInputMode",    "DIRECT_PARAMS"),
                 Map.entry("params",              "{\"pubs\": [[\"circuit\", [\"ZZ\"], null]]}"),
                 Map.entry("waitForResult",       true),
                 Map.entry("timeoutSeconds",      30),
@@ -125,12 +127,12 @@ class IBMQWorkflowTest {
         expectJobSubmission(JOB_ID);
 
         ProcessInstanceEvent instance = startProcess(Map.ofEntries(
-                Map.entry("apiKey",              "test-api-key"),
+                Map.entry("apiKey",              API_KEY),
                 Map.entry("ibmqUrl",             SERVICE_URL),
-                Map.entry("ibmqInstance",        "ibm-q/open/main"),
+                Map.entry("ibmqInstance",        INSTANCE_CRN),
                 Map.entry("backend",             "ibmq_qasm_simulator"),
                 Map.entry("programId",           PROGRAM_SAMPLER),
-                Map.entry("circuitInputMode",    "OPEN_QASM"),
+                Map.entry("CircuitInputMode",    "OPEN_QASM"),
                 Map.entry("circuit",             CIRCUIT),
                 Map.entry("shots",               512),
                 Map.entry("waitForResult",       false),
@@ -161,9 +163,7 @@ class IBMQWorkflowTest {
         mockServer.expect(requestTo(IAM_TOKEN_URL))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess(
-                        """
-                        {"access_token": "%s", "expires_in": 3600}
-                        """.formatted(ACCESS_TOKEN),
+                        "{\"access_token\": \"" + ACCESS_TOKEN + "\", \"expires_in\": 3600}",
                         MediaType.APPLICATION_JSON));
     }
 
@@ -171,6 +171,8 @@ class IBMQWorkflowTest {
         mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
+                .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
+                .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
                 .andRespond(withSuccess(
                         """
                         {"id": "%s", "status": "QUEUED"}

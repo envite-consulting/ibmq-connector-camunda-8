@@ -53,6 +53,7 @@ public class IBMQParameterHandler {
         }
 
         ObjectNode params = objectMapper.createObjectNode();
+        params.put("version", 2);
         ArrayNode pubs = params.putArray(FIELD_PUBS);
 
         // A PUB (Primitive Unified Bloc) for Sampler V2: [circuit, parameter_values, shots]

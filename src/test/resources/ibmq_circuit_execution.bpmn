@@ -6,7 +6,9 @@
 
   <process id="ibmq-circuit-execution" name="IBM Quantum Circuit Execution" isExecutable="true">
 
-    <startEvent id="start" name="Start"/>
+    <startEvent id="start" name="Start">
+      <outgoing>to-ibmq</outgoing>
+    </startEvent>
 
     <sequenceFlow id="to-ibmq" sourceRef="start" targetRef="ibmq-task"/>
 
@@ -15,13 +17,33 @@
         <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="1"/>
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="ibmqResult"/>
+          <zeebe:header key="resultExpression" value="= {jobId: response.jobId, status: response.status, result: response.result}"/>
         </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:input source="=apiKey"              target="apiKey"/>
+          <zeebe:input source="=ibmqUrl"             target="ibmqUrl"/>
+          <zeebe:input source="=ibmqInstance"        target="ibmqInstance"/>
+          <zeebe:input source="=backend"             target="backend"/>
+          <zeebe:input source="=programId"           target="programId"/>
+          <zeebe:input source="=CircuitInputMode"    target="CircuitInputMode"/>
+          <zeebe:input source="=circuit"             target="circuit"/>
+          <zeebe:input source="=qasmVersion"         target="qasmVersion"/>
+          <zeebe:input source="=shots"               target="shots"/>
+          <zeebe:input source="=params"              target="params"/>
+          <zeebe:input source="=waitForResult"       target="waitForResult"/>
+          <zeebe:input source="=timeoutSeconds"      target="timeoutSeconds"/>
+          <zeebe:input source="=pollIntervalSeconds" target="pollIntervalSeconds"/>
+        </zeebe:ioMapping>
       </extensionElements>
+      <incoming>to-ibmq</incoming>
+      <outgoing>to-end</outgoing>
     </serviceTask>
 
     <sequenceFlow id="to-end" sourceRef="ibmq-task" targetRef="end"/>
 
-    <endEvent id="end" name="End"/>
+    <endEvent id="end" name="End">
+      <incoming>to-end</incoming>
+    </endEvent>
 
   </process>
 

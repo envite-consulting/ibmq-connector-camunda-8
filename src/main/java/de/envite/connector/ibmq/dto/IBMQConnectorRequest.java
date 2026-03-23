@@ -1,5 +1,6 @@
 package de.envite.connector.ibmq.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.envite.connector.ibmq.CircuitInputMode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -22,13 +23,13 @@ public class IBMQConnectorRequest {
 
     /**
      * IBM Quantum service base URL.
-     * Defaults to the US-East Qiskit Runtime endpoint.
+     * Defaults to the IBM Quantum Platform endpoint.
      */
-    private String ibmqUrl = "https://us-east.quantum-computing.ibm.com";
+    private String ibmqUrl = "https://quantum.cloud.ibm.com/api";
 
     /**
-     * IBM Quantum instance in <code>hub/group/project</code> format,
-     * e.g. <code>ibm-q/open/main</code>.
+     * IBM Quantum instance Cloud Resource Name (CRN).
+     * Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.
      */
     @NotEmpty
     private String ibmqInstance;
@@ -52,12 +53,17 @@ public class IBMQConnectorRequest {
      * </ul>
      */
     @NotNull
+    @JsonProperty("CircuitInputMode")
     private CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
 
     /**
-     * OpenQASM 2 or 3 circuit string.
+     * OpenQASM 3 circuit string using native basis gates ({@code x}, {@code sx}, {@code rz}, {@code cx}).
      * Required when {@link #circuitInputMode} is {@link CircuitInputMode#OPEN_QASM}.
      * Only supported for the <em>sampler</em> primitive.
+     *
+     * <p><strong>Note:</strong> the IBM Quantum REST API does not transpile circuits.
+     * Non-native gates such as {@code h} must be decomposed before submission —
+     * e.g. {@code h} ≡ {@code rz(π/2); sx; rz(π/2)}.</p>
      */
     private String circuit;
 
@@ -68,31 +74,32 @@ public class IBMQConnectorRequest {
      *   <li>{@code 3} – OpenQASM 3.0 (preferred for modern IBM Quantum backends)</li>
      * </ul>
      */
-    private int qasmVersion = 3;
+    private Integer qasmVersion = 3;
 
     /**
      * Number of shots (circuit repetitions) when using {@link CircuitInputMode#OPEN_QASM}.
      * Ignored in {@link CircuitInputMode#DIRECT_PARAMS} mode.
      */
     @Min(1)
-    private int shots = 1024;
+    private Integer shots = 1024;
 
     /**
      * Full Qiskit Runtime job params as a JSON string.
      * Required when {@link #circuitInputMode} is {@link CircuitInputMode#DIRECT_PARAMS}.
+     * Must include {@code "version": 2} for Primitives V2.
      * Example for the sampler primitive:
-     * <pre>{"pubs": [["&lt;circuit&gt;", null, 1024]]}</pre>
+     * <pre>{"version": 2, "pubs": [["&lt;circuit&gt;", null, 1024]]}</pre>
      */
     private String params;
 
     /** When <code>true</code> the connector polls until the job reaches a terminal state. */
-    private boolean waitForResult = true;
+    private Boolean waitForResult = true;
 
     /** Maximum time in seconds to wait for a result before failing. */
     @Min(1)
-    private int timeoutSeconds = 300;
+    private Integer timeoutSeconds = 300;
 
     /** Polling interval in seconds when <code>waitForResult</code> is <code>true</code>. */
     @Min(1)
-    private int pollIntervalSeconds = 5;
+    private Integer pollIntervalSeconds = 5;
 }

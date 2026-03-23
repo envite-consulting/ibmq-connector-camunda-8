@@ -1,0 +1,86 @@
+{
+  "id": "ibmq-input-form",
+  "type": "default",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textfield",
+      "key": "apiKey",
+      "label": "IBM Quantum API Key",
+      "description": "Use a Camunda secret: {{secrets.IBMQ_API_KEY}}",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqUrl",
+      "label": "IBMQ URL",
+      "defaultValue": "https://quantum.cloud.ibm.com/api"
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqInstance",
+      "label": "IBMQ Instance CRN",
+      "description": "Cloud Resource Name (CRN). Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textfield",
+      "key": "backend",
+      "label": "Backend",
+      "description": "Name of the quantum backend to use, e.g. ibm_brisbane. Run GET /v1/backends with your CRN to list available backends.",
+      "validate": { "required": true }
+    },
+    {
+      "type": "select",
+      "key": "programId",
+      "label": "Program ID",
+      "defaultValue": "sampler",
+      "values": [
+        { "label": "Sampler",   "value": "sampler" },
+        { "label": "Estimator", "value": "estimator" }
+      ]
+    },
+    {
+      "type": "select",
+      "key": "CircuitInputMode",
+      "label": "Circuit Input Mode",
+      "defaultValue": "OPEN_QASM",
+      "values": [
+        { "label": "OpenQASM (2 or 3)",    "value": "OPEN_QASM" },
+        { "label": "Direct Params (JSON)", "value": "DIRECT_PARAMS" }
+      ]
+    },
+    {
+      "type": "textarea",
+      "key": "circuit",
+      "label": "Quantum Circuit (OpenQASM)",
+      "description": "OpenQASM 3 circuit using native basis gates only (x, sx, rz, cx). The REST API does not transpile — non-native gates like h will be rejected by real hardware backends.",
+      "defaultValue": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\nqubit[1] q;\nrz(pi/2) q[0];\nsx q[0];\nrz(pi/2) q[0];"
+    },
+    {
+      "type": "number",
+      "key": "shots",
+      "label": "Shots",
+      "defaultValue": 1024,
+      "description": "Number of circuit repetitions. Used in OpenQASM mode only."
+    },
+    {
+      "type": "textarea",
+      "key": "params",
+      "label": "Params (JSON)",
+      "description": "Full Qiskit Runtime job params as JSON. Required when Circuit Input Mode is Direct Params or Program ID is Estimator."
+    },
+    {
+      "type": "number",
+      "key": "timeoutSeconds",
+      "label": "Timeout (seconds)",
+      "defaultValue": 300
+    },
+    {
+      "type": "number",
+      "key": "pollIntervalSeconds",
+      "label": "Poll Interval (seconds)",
+      "defaultValue": 5
+    }
+  ]
+}
