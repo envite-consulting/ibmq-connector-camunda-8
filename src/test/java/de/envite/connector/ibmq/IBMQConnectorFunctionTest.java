@@ -1,9 +1,9 @@
 package de.envite.connector.ibmq;
 
 import de.envite.connector.ibmq.dto.IBMQBaseRequest;
-import de.envite.connector.ibmq.dto.IBMQConnectorResponse;
-import de.envite.connector.ibmq.dto.IBMQGetJobResultRequest;
-import de.envite.connector.ibmq.dto.IBMQSubmitJobRequest;
+import de.envite.connector.ibmq.dto.IBMQConnectorResponseDto;
+import de.envite.connector.ibmq.dto.IBMQGetJobResultRequestDto;
+import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 
 import io.camunda.connector.api.outbound.OutboundConnectorContext;
 import org.junit.jupiter.api.Tag;
@@ -30,12 +30,12 @@ class IBMQConnectorFunctionTest {
 
     @Test
     void execute_withSubmitJob_delegatesToExecuteCircuit() {
-        IBMQSubmitJobRequest submitRequest = buildOpenQasmRequest();
-        IBMQConnectorResponse expected = new IBMQConnectorResponse("job-123", STATUS_COMPLETED, null);
+        IBMQSubmitJobRequestDto submitRequest = buildOpenQasmRequest();
+        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-123", STATUS_COMPLETED, null);
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.SUBMIT_JOB));
-        when(context.bindVariables(IBMQSubmitJobRequest.class)).thenReturn(submitRequest);
+        when(context.bindVariables(IBMQSubmitJobRequestDto.class)).thenReturn(submitRequest);
         when(ibmqService.executeCircuit(submitRequest)).thenReturn(expected);
 
         Object result = function.execute(context);
@@ -47,12 +47,12 @@ class IBMQConnectorFunctionTest {
 
     @Test
     void execute_withGetJobResult_delegatesToGetJobResult() {
-        IBMQGetJobResultRequest getRequest = buildGetJobResultRequest();
-        IBMQConnectorResponse expected = new IBMQConnectorResponse("job-456", STATUS_COMPLETED, null);
+        IBMQGetJobResultRequestDto getRequest = buildGetJobResultRequest();
+        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-456", STATUS_COMPLETED, null);
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.GET_JOB_RESULT));
-        when(context.bindVariables(IBMQGetJobResultRequest.class)).thenReturn(getRequest);
+        when(context.bindVariables(IBMQGetJobResultRequestDto.class)).thenReturn(getRequest);
         when(ibmqService.getJobResult(getRequest)).thenReturn(expected);
 
         Object result = function.execute(context);
@@ -64,12 +64,12 @@ class IBMQConnectorFunctionTest {
 
     @Test
     void execute_withDirectParams_delegatesToExecuteCircuit() {
-        IBMQSubmitJobRequest submitRequest = buildDirectParamsRequest();
-        IBMQConnectorResponse expected = new IBMQConnectorResponse("job-456", STATUS_COMPLETED, null);
+        IBMQSubmitJobRequestDto submitRequest = buildDirectParamsRequest();
+        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-456", STATUS_COMPLETED, null);
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.SUBMIT_JOB));
-        when(context.bindVariables(IBMQSubmitJobRequest.class)).thenReturn(submitRequest);
+        when(context.bindVariables(IBMQSubmitJobRequestDto.class)).thenReturn(submitRequest);
         when(ibmqService.executeCircuit(submitRequest)).thenReturn(expected);
 
         Object result = function.execute(context);
@@ -80,19 +80,19 @@ class IBMQConnectorFunctionTest {
 
     @Test
     void execute_passesAllBoundFieldsToService() {
-        IBMQSubmitJobRequest submitRequest = buildOpenQasmRequest();
+        IBMQSubmitJobRequestDto submitRequest = buildOpenQasmRequest();
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.SUBMIT_JOB));
-        when(context.bindVariables(IBMQSubmitJobRequest.class)).thenReturn(submitRequest);
-        when(ibmqService.executeCircuit(any())).thenReturn(new IBMQConnectorResponse("job-789", STATUS_QUEUED, null));
+        when(context.bindVariables(IBMQSubmitJobRequestDto.class)).thenReturn(submitRequest);
+        when(ibmqService.executeCircuit(any())).thenReturn(new IBMQConnectorResponseDto("job-789", STATUS_QUEUED, null));
 
         function.execute(context);
 
-        ArgumentCaptor<IBMQSubmitJobRequest> captor = ArgumentCaptor.forClass(IBMQSubmitJobRequest.class);
+        ArgumentCaptor<IBMQSubmitJobRequestDto> captor = ArgumentCaptor.forClass(IBMQSubmitJobRequestDto.class);
         verify(ibmqService).executeCircuit(captor.capture());
 
-        IBMQSubmitJobRequest captured = captor.getValue();
+        IBMQSubmitJobRequestDto captured = captor.getValue();
         assertThat(captured.getApiKey()).isEqualTo("test-key");
         assertThat(captured.getIbmqInstance()).isEqualTo("ibm-q/open/main");
         assertThat(captured.getBackend()).isEqualTo("ibmq_qasm_simulator");
@@ -104,16 +104,23 @@ class IBMQConnectorFunctionTest {
 
     @Test
     void execute_withNoWaitRequest_returnsQueuedResult() {
-        IBMQSubmitJobRequest submitRequest = buildOpenQasmRequest();
-        submitRequest.setWaitForResult(false);
-        IBMQConnectorResponse queuedResult = new IBMQConnectorResponse("job-123", STATUS_QUEUED, null);
+        IBMQSubmitJobRequestDto submitRequest = IBMQSubmitJobRequestDto.builder()
+                .apiKey("test-key")
+                .ibmqUrl("https://quantum.cloud.ibm.com/api")
+                .ibmqInstance("ibm-q/open/main")
+                .backend("ibmq_qasm_simulator")
+                .programId(PROGRAM_SAMPLER)
+                .circuit("OPENQASM 3.0; qubit[1] q; h q[0];")
+                .waitForResult(false)
+                .build();
+        IBMQConnectorResponseDto queuedResult = new IBMQConnectorResponseDto("job-123", STATUS_QUEUED, null);
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.SUBMIT_JOB));
-        when(context.bindVariables(IBMQSubmitJobRequest.class)).thenReturn(submitRequest);
+        when(context.bindVariables(IBMQSubmitJobRequestDto.class)).thenReturn(submitRequest);
         when(ibmqService.executeCircuit(submitRequest)).thenReturn(queuedResult);
 
-        IBMQConnectorResponse result = (IBMQConnectorResponse) function.execute(context);
+        IBMQConnectorResponseDto result = (IBMQConnectorResponseDto) function.execute(context);
 
         assertThat(result.getStatus()).isEqualTo(STATUS_QUEUED);
         assertThat(result.getResult()).isNull();
@@ -124,48 +131,46 @@ class IBMQConnectorFunctionTest {
     // -------------------------------------------------------------------------
 
     private IBMQBaseRequest baseRequest(OperationMode mode) {
-        IBMQBaseRequest base = new IBMQBaseRequest();
-        base.setOperationMode(mode);
-        return base;
+        return IBMQBaseRequest.builder().operationMode(mode).build();
     }
 
-    private IBMQSubmitJobRequest buildOpenQasmRequest() {
-        IBMQSubmitJobRequest request = new IBMQSubmitJobRequest();
-        request.setApiKey("test-key");
-        request.setIbmqUrl("https://quantum.cloud.ibm.com/api");
-        request.setIbmqInstance("ibm-q/open/main");
-        request.setBackend("ibmq_qasm_simulator");
-        request.setProgramId(PROGRAM_SAMPLER);
-        request.setCircuitInputMode(CircuitInputMode.OPEN_QASM);
-        request.setCircuit("OPENQASM 3.0; qubit[1] q; h q[0];");
-        request.setShots(512);
-        request.setWaitForResult(true);
-        request.setTimeoutSeconds(30);
-        request.setPollIntervalSeconds(5);
-        return request;
+    private IBMQSubmitJobRequestDto buildOpenQasmRequest() {
+        return IBMQSubmitJobRequestDto.builder()
+                .apiKey("test-key")
+                .ibmqUrl("https://quantum.cloud.ibm.com/api")
+                .ibmqInstance("ibm-q/open/main")
+                .backend("ibmq_qasm_simulator")
+                .programId(PROGRAM_SAMPLER)
+                .circuitInputMode(CircuitInputMode.OPEN_QASM)
+                .circuit("OPENQASM 3.0; qubit[1] q; h q[0];")
+                .shots(512)
+                .waitForResult(true)
+                .timeoutSeconds(30)
+                .pollIntervalSeconds(5)
+                .build();
     }
 
-    private IBMQSubmitJobRequest buildDirectParamsRequest() {
-        IBMQSubmitJobRequest request = new IBMQSubmitJobRequest();
-        request.setApiKey("test-key");
-        request.setIbmqUrl("https://quantum.cloud.ibm.com/api");
-        request.setIbmqInstance("ibm-q/open/main");
-        request.setBackend("ibmq_qasm_simulator");
-        request.setProgramId(PROGRAM_SAMPLER);
-        request.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
-        request.setParams("{\"pubs\": [[\"OPENQASM 3.0; qubit[1] q; h q[0];\", null, 1024]]}");
-        request.setWaitForResult(true);
-        request.setTimeoutSeconds(30);
-        request.setPollIntervalSeconds(5);
-        return request;
+    private IBMQSubmitJobRequestDto buildDirectParamsRequest() {
+        return IBMQSubmitJobRequestDto.builder()
+                .apiKey("test-key")
+                .ibmqUrl("https://quantum.cloud.ibm.com/api")
+                .ibmqInstance("ibm-q/open/main")
+                .backend("ibmq_qasm_simulator")
+                .programId(PROGRAM_SAMPLER)
+                .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
+                .params("{\"pubs\": [[\"OPENQASM 3.0; qubit[1] q; h q[0];\", null, 1024]]}")
+                .waitForResult(true)
+                .timeoutSeconds(30)
+                .pollIntervalSeconds(5)
+                .build();
     }
 
-    private IBMQGetJobResultRequest buildGetJobResultRequest() {
-        IBMQGetJobResultRequest request = new IBMQGetJobResultRequest();
-        request.setApiKey("test-key");
-        request.setIbmqUrl("https://quantum.cloud.ibm.com/api");
-        request.setIbmqInstance("ibm-q/open/main");
-        request.setJobId("job-456");
-        return request;
+    private IBMQGetJobResultRequestDto buildGetJobResultRequest() {
+        return IBMQGetJobResultRequestDto.builder()
+                .apiKey("test-key")
+                .ibmqUrl("https://quantum.cloud.ibm.com/api")
+                .ibmqInstance("ibm-q/open/main")
+                .jobId("job-456")
+                .build();
     }
 }

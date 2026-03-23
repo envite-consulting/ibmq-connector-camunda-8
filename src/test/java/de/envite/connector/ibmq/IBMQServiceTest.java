@@ -1,8 +1,8 @@
 package de.envite.connector.ibmq;
 
-import de.envite.connector.ibmq.dto.IBMQConnectorResponse;
-import de.envite.connector.ibmq.dto.IBMQGetJobResultRequest;
-import de.envite.connector.ibmq.dto.IBMQSubmitJobRequest;
+import de.envite.connector.ibmq.dto.IBMQConnectorResponseDto;
+import de.envite.connector.ibmq.dto.IBMQGetJobResultRequestDto;
+import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ class IBMQServiceTest {
         expectIamTokenExchange();
         expectJobSubmission();
 
-        IBMQConnectorResponse result = service.executeCircuit(openQasmRequest(r -> r.setWaitForResult(false)));
+        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().waitForResult(false).build());
 
         assertThat(result.getJobId()).isEqualTo(JOB_ID);
         assertThat(result.getStatus()).isEqualTo(STATUS_QUEUED);
@@ -66,7 +66,7 @@ class IBMQServiceTest {
         expectJobStatus(STATUS_COMPLETED);
         expectJobResults();
 
-        IBMQConnectorResponse result = service.executeCircuit(openQasmRequest(r -> {}));
+        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().build());
 
         assertThat(result.getJobId()).isEqualTo(JOB_ID);
         assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
@@ -80,7 +80,7 @@ class IBMQServiceTest {
         expectJobSubmission();
         expectJobStatus(STATUS_FAILED);
 
-        IBMQConnectorResponse result = service.executeCircuit(openQasmRequest(r -> {}));
+        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().build());
 
         assertThat(result.getStatus()).isEqualTo(STATUS_FAILED);
         assertThat(result.getResult()).isNull();
@@ -103,8 +103,7 @@ class IBMQServiceTest {
         expectJobStatus(STATUS_COMPLETED);
         expectJobResults();
 
-        IBMQSubmitJobRequest request = openQasmRequest(r -> r.setShots(512));
-        service.executeCircuit(request);
+        service.executeCircuit(openQasmRequest().shots(512).build());
 
         mockServer.verify();
     }
@@ -124,13 +123,11 @@ class IBMQServiceTest {
                 .andExpect(content().json("{\"params\": {\"pubs\": [[\"custom-circuit\", null, 2048]]}}"))
                 .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
 
-        IBMQSubmitJobRequest request = openQasmRequest(r -> {
-            r.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
-            r.setParams(customParams);
-            r.setWaitForResult(false);
-        });
-
-        IBMQConnectorResponse result = service.executeCircuit(request);
+        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest()
+                .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
+                .params(customParams)
+                .waitForResult(false)
+                .build());
 
         assertThat(result.getJobId()).isEqualTo(JOB_ID);
         assertThat(result.getStatus()).isEqualTo(STATUS_QUEUED);
@@ -149,7 +146,7 @@ class IBMQServiceTest {
         expectJobStatus(STATUS_COMPLETED);
         expectJobResults();
 
-        IBMQConnectorResponse result = service.executeCircuit(openQasmRequest(r -> r.setPollIntervalSeconds(1)));
+        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().pollIntervalSeconds(1).build());
 
         assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
         mockServer.verify();
@@ -168,12 +165,7 @@ class IBMQServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(statusResponse("RUNNING"), MediaType.APPLICATION_JSON));
 
-        IBMQSubmitJobRequest request = openQasmRequest(r -> {
-            r.setTimeoutSeconds(1);
-            r.setPollIntervalSeconds(1);
-        });
-
-        assertThatThrownBy(() -> service.executeCircuit(request))
+        assertThatThrownBy(() -> service.executeCircuit(openQasmRequest().timeoutSeconds(1).pollIntervalSeconds(1).build()))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Timed out");
     }
@@ -185,9 +177,8 @@ class IBMQServiceTest {
     @Test
     void executeCircuit_withOpenQasm_andBlankCircuit_throwsIllegalArgumentException() {
         expectIamTokenExchange();
-        IBMQSubmitJobRequest request = openQasmRequest(r -> r.setCircuit("  "));
 
-        assertThatThrownBy(() -> service.executeCircuit(request))
+        assertThatThrownBy(() -> service.executeCircuit(openQasmRequest().circuit("  ").build()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("circuit");
     }
@@ -199,12 +190,11 @@ class IBMQServiceTest {
     @Test
     void executeCircuit_withDirectParams_andBlankParams_throwsIllegalArgumentException() {
         expectIamTokenExchange();
-        IBMQSubmitJobRequest request = openQasmRequest(r -> {
-            r.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
-            r.setParams("  ");
-        });
 
-        assertThatThrownBy(() -> service.executeCircuit(request))
+        assertThatThrownBy(() -> service.executeCircuit(openQasmRequest()
+                        .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
+                        .params("  ")
+                        .build()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("params");
     }
@@ -212,12 +202,11 @@ class IBMQServiceTest {
     @Test
     void executeCircuit_withDirectParams_andInvalidJson_throwsRuntimeException() {
         expectIamTokenExchange();
-        IBMQSubmitJobRequest request = openQasmRequest(r -> {
-            r.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
-            r.setParams("not-valid-json{{{");
-        });
 
-        assertThatThrownBy(() -> service.executeCircuit(request))
+        assertThatThrownBy(() -> service.executeCircuit(openQasmRequest()
+                        .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
+                        .params("not-valid-json{{{")
+                        .build()))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("parse");
     }
@@ -232,7 +221,7 @@ class IBMQServiceTest {
         expectJobStatus(STATUS_COMPLETED);
         expectJobResults();
 
-        IBMQConnectorResponse result = service.getJobResult(getJobResultRequest(r -> {}));
+        IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
 
         assertThat(result.getJobId()).isEqualTo(JOB_ID);
         assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
@@ -245,7 +234,7 @@ class IBMQServiceTest {
         expectIamTokenExchange();
         expectJobStatus("RUNNING");
 
-        IBMQConnectorResponse result = service.getJobResult(getJobResultRequest(r -> {}));
+        IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
 
         assertThat(result.getJobId()).isEqualTo(JOB_ID);
         assertThat(result.getStatus()).isEqualTo("RUNNING");
@@ -258,7 +247,7 @@ class IBMQServiceTest {
         expectIamTokenExchange();
         expectJobStatus(STATUS_FAILED);
 
-        IBMQConnectorResponse result = service.getJobResult(getJobResultRequest(r -> {}));
+        IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
 
         assertThat(result.getStatus()).isEqualTo(STATUS_FAILED);
         assertThat(result.getResult()).isNull();
@@ -320,30 +309,26 @@ class IBMQServiceTest {
                 """.formatted(JOB_ID, status);
     }
 
-    private IBMQSubmitJobRequest openQasmRequest(java.util.function.Consumer<IBMQSubmitJobRequest> customizer) {
-        IBMQSubmitJobRequest request = new IBMQSubmitJobRequest();
-        request.setApiKey(API_KEY);
-        request.setIbmqUrl(SERVICE_URL);
-        request.setIbmqInstance(INSTANCE_CRN);
-        request.setBackend("ibmq_qasm_simulator");
-        request.setProgramId(PROGRAM_SAMPLER);
-        request.setCircuitInputMode(CircuitInputMode.OPEN_QASM);
-        request.setCircuit(CIRCUIT);
-        request.setShots(1024);
-        request.setWaitForResult(true);
-        request.setTimeoutSeconds(30);
-        request.setPollIntervalSeconds(1);
-        customizer.accept(request);
-        return request;
+    private IBMQSubmitJobRequestDto.IBMQSubmitJobRequestDtoBuilder<?, ?> openQasmRequest() {
+        return IBMQSubmitJobRequestDto.builder()
+                .apiKey(API_KEY)
+                .ibmqUrl(SERVICE_URL)
+                .ibmqInstance(INSTANCE_CRN)
+                .backend("ibmq_qasm_simulator")
+                .programId(PROGRAM_SAMPLER)
+                .circuitInputMode(CircuitInputMode.OPEN_QASM)
+                .circuit(CIRCUIT)
+                .shots(1024)
+                .waitForResult(true)
+                .timeoutSeconds(30)
+                .pollIntervalSeconds(1);
     }
 
-    private IBMQGetJobResultRequest getJobResultRequest(java.util.function.Consumer<IBMQGetJobResultRequest> customizer) {
-        IBMQGetJobResultRequest request = new IBMQGetJobResultRequest();
-        request.setApiKey(API_KEY);
-        request.setIbmqUrl(SERVICE_URL);
-        request.setIbmqInstance(INSTANCE_CRN);
-        request.setJobId(JOB_ID);
-        customizer.accept(request);
-        return request;
+    private IBMQGetJobResultRequestDto.IBMQGetJobResultRequestDtoBuilder<?, ?> getJobResultRequest() {
+        return IBMQGetJobResultRequestDto.builder()
+                .apiKey(API_KEY)
+                .ibmqUrl(SERVICE_URL)
+                .ibmqInstance(INSTANCE_CRN)
+                .jobId(JOB_ID);
     }
 }

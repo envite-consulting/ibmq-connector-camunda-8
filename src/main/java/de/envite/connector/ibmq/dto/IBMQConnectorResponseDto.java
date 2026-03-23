@@ -11,7 +11,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class IBMQConnectorResponse {
+public class IBMQConnectorResponseDto {
 
     /** IBM Quantum job identifier. */
     private String jobId;

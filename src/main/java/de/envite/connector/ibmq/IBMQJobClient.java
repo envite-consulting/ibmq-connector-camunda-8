@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.envite.connector.ibmq.dto.IBMQBaseRequest;
-import de.envite.connector.ibmq.dto.IBMQSubmitJobRequest;
+import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -46,7 +46,7 @@ public class IBMQJobClient {
      * @param params      pre-built job parameters (e.g. PUBs for sampler, observables for estimator)
      * @return the job ID assigned by the IBM Quantum runtime
      */
-    public String submitJob(IBMQSubmitJobRequest request, String accessToken, JsonNode params) {
+    public String submitJob(IBMQSubmitJobRequestDto request, String accessToken, JsonNode params) {
         ObjectNode jobBody = objectMapper.createObjectNode();
         jobBody.put(FIELD_PROGRAM_ID, request.getProgramId());
         jobBody.put(FIELD_BACKEND, request.getBackend());
@@ -71,7 +71,7 @@ public class IBMQJobClient {
      * @return the terminal status ({@code COMPLETED}, {@code FAILED}, {@code CANCELLED}, or {@code ERROR})
      * @throws RuntimeException if the timeout is exceeded or polling is interrupted
      */
-    public String pollUntilTerminal(IBMQSubmitJobRequest request, String accessToken, String jobId) {
+    public String pollUntilTerminal(IBMQSubmitJobRequestDto request, String accessToken, String jobId) {
         Instant deadline = Instant.now().plusSeconds(request.getTimeoutSeconds());
 
         while (Instant.now().isBefore(deadline)) {
