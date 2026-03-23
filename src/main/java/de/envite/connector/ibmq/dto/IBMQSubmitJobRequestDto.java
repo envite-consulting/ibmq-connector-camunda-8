@@ -1,7 +1,8 @@
 package de.envite.connector.ibmq.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import de.envite.connector.ibmq.CircuitInputMode;
+import de.envite.connector.ibmq.model.CircuitInputMode;
+import de.envite.connector.ibmq.model.OperationMode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +15,7 @@ import lombok.extern.jackson.Jacksonized;
 
 /**
  * Input parameters for the IBMQ connector when submitting a new quantum job
- * ({@link de.envite.connector.ibmq.OperationMode#SUBMIT_JOB}).
+ * ({@link OperationMode#SUBMIT_JOB}).
  *
  * <p>Describes the quantum job to run — either as an OpenQASM circuit string
  * ({@link CircuitInputMode#OPEN_QASM}) or as a raw Qiskit Runtime params JSON document

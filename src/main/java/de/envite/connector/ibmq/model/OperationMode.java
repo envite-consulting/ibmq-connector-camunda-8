@@ -1,4 +1,4 @@
-package de.envite.connector.ibmq;
+package de.envite.connector.ibmq.model;
 
 /**
  * Determines which operation the IBMQ connector performs.

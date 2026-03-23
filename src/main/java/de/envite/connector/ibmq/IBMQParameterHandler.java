@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
+import de.envite.connector.ibmq.model.CircuitInputMode;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 

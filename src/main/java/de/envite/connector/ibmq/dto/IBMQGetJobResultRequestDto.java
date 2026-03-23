@@ -1,5 +1,6 @@
 package de.envite.connector.ibmq.dto;
 
+import de.envite.connector.ibmq.model.OperationMode;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -9,7 +10,7 @@ import lombok.extern.jackson.Jacksonized;
 
 /**
  * Input parameters for the IBMQ connector when checking the result of a previously submitted job
- * ({@link de.envite.connector.ibmq.OperationMode#GET_JOB_RESULT}).
+ * ({@link OperationMode#GET_JOB_RESULT}).
  *
  * <p>Makes a single status request with no polling. Intended for use inside a BPMN polling loop
  * driven by a timer intermediate event, as an alternative to blocking inside the connector.

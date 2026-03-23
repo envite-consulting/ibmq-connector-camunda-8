@@ -1,6 +1,6 @@
 package de.envite.connector.ibmq.dto;
 
-import de.envite.connector.ibmq.OperationMode;
+import de.envite.connector.ibmq.model.OperationMode;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;

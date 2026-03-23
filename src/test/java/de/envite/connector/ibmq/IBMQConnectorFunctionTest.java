@@ -5,6 +5,8 @@ import de.envite.connector.ibmq.dto.IBMQConnectorResponseDto;
 import de.envite.connector.ibmq.dto.IBMQGetJobResultRequestDto;
 import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 
+import de.envite.connector.ibmq.model.CircuitInputMode;
+import de.envite.connector.ibmq.model.OperationMode;
 import io.camunda.connector.api.outbound.OutboundConnectorContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

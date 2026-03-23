@@ -4,6 +4,7 @@ import de.envite.connector.ibmq.dto.IBMQBaseRequest;
 import de.envite.connector.ibmq.dto.IBMQGetJobResultRequestDto;
 import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 
+import de.envite.connector.ibmq.model.OperationMode;
 import io.camunda.connector.api.annotation.OutboundConnector;
 import io.camunda.connector.api.outbound.OutboundConnectorContext;
 import io.camunda.connector.api.outbound.OutboundConnectorFunction;
