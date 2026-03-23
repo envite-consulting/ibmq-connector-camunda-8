@@ -13,7 +13,7 @@ TODO: general description
 Two example workflows are provided in the `example/` directory:
 
 - **[Blocking](example/ibmq-example-workflow_blocking.bpmn)** — submits a circuit and blocks the connector thread until the job reaches a terminal state (`waitForResult=true`). This is simple to use, but quantum jobs on real hardware backends may queue for longer than the configured timeout, causing the connector to throw a timeout exception and Camunda to re-execute the circuit. Further, this can lead to an incidents if all retries are used.
-- **Polling** *(coming soon)* — submits the job without waiting, then polls the result in a BPMN timer loop. Recommended for real hardware backends where execution time is unpredictable.
+- **[Polling](example/ibmq-example-workflow_polling.bpmn)** — submits the job without waiting (`waitForResult=false`), then polls the result every 30 seconds via a BPMN timer loop using the `GET_JOB_RESULT` operation. Recommended for real hardware backends where execution time is unpredictable.
 
 Both include a start event with an input form for all relevant connector parameters, the IBM Quantum Connector service task, a user task for reviewing the result, and an end event.
 Follow the steps under [How to Run](#-how-to-run), and then import the file into Camunda Modeler.
