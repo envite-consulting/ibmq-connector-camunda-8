@@ -10,10 +10,13 @@
 
 TODO: general description
 
-An [example workflow](example/ibmq-example-workflow.bpmn) is provided in the `example/` directory.
-It includes a start event with an input form for all relevant connector parameters,
-the IBM Quantum Connector service task, a user task for reviewing the result, and an end event.
-Follow the steps under [How to Run](#-how-to-run), and then, import the file into Camunda Modeler.
+Two example workflows are provided in the `example/` directory:
+
+- **[Blocking](example/ibmq-example-workflow_blocking.bpmn)** — submits a circuit and blocks the connector thread until the job reaches a terminal state (`waitForResult=true`). This is simple to use, but quantum jobs on real hardware backends may queue for longer than the configured timeout, causing the connector to throw a timeout exception and Camunda to re-execute the circuit. Further, this can lead to an incidents if all retries are used.
+- **Polling** *(coming soon)* — submits the job without waiting, then polls the result in a BPMN timer loop. Recommended for real hardware backends where execution time is unpredictable.
+
+Both include a start event with an input form for all relevant connector parameters, the IBM Quantum Connector service task, a user task for reviewing the result, and an end event.
+Follow the steps under [How to Run](#-how-to-run), and then import the file into Camunda Modeler.
 
 ![Example workflow in Camunda Modeler](docs/images/example-workflow-camunda-modeler.png)
 
@@ -70,8 +73,8 @@ Import `element-templates/ibmq-connector.json` into your Camunda Modeler to get 
 
 ### 4. Model and Deploy a Process
 
-An [example workflow](example/ibmq-example-workflow.bpmn) is provided in `example/`.
-The connector can automatically deploy the example workflow and its forms to your Camunda cluster on startup by enabling the following property in `application.properties`:
+Example workflows are provided in `example/` (see [above](#ibm-quantum-connector-for-camunda-8-) for a description of each).
+The connector can automatically deploy the blocking example workflow and its forms to your Camunda cluster on startup by enabling the following property in `application.properties`:
 
 ```properties
 ibmq.example.deploy=true
@@ -79,7 +82,7 @@ ibmq.example.deploy=true
 
 > **Note:** Keep this set to `false` (the default) in production environments.
 
-If you prefer to deploy manually, upload `example/ibmq-example-workflow.bpmn`, `example/ibmq-input-form.form`, and `example/ibmq-result-form.form` to your cluster — either via Camunda Web Modeler or the Zeebe API.
+If you prefer to deploy manually, upload the desired workflow from `example/` together with `example/ibmq-input-form.form` and `example/ibmq-result-form.form` to your cluster — either via Camunda Web Modeler or the Zeebe API.
 In case you published the element template to a project, upload the workflow to the **same project** so Web Modeler automatically links the template and displays the connector with its icon.
 
 To model your own process, add a service task and apply the **IBM Quantum Connector** element template, then fill in the required properties.
