@@ -1,4 +1,4 @@
-package de.envite.connector.ibmq;
+package de.envite.connector.ibmq.deployment;
 
 import io.camunda.client.CamundaClient;
 import lombok.AllArgsConstructor;
