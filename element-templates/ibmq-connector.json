@@ -34,7 +34,7 @@
     {
       "id": "operationMode",
       "label": "Operation",
-      "description": "Choose <em>Submit Job</em> to authenticate and queue a new quantum job. Choose <em>Get Job Result</em> to check the status of a previously submitted job — use this inside a BPMN polling loop with a timer to avoid long-running connector threads.",
+      "description": "Choose <em>Submit Job</em> to queue a new quantum job. Choose <em>Get Job Result</em> to check the status of a previously submitted job — use this inside a BPMN polling loop with a timer to avoid long-running connector threads.",
       "group": "operation",
       "type": "Dropdown",
       "value": "SUBMIT_JOB",
