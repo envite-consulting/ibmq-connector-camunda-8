@@ -57,9 +57,13 @@ public class IBMQConnectorRequest {
     private CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
 
     /**
-     * OpenQASM 2 or 3 circuit string.
+     * OpenQASM 3 circuit string using native basis gates ({@code x}, {@code sx}, {@code rz}, {@code cx}).
      * Required when {@link #circuitInputMode} is {@link CircuitInputMode#OPEN_QASM}.
      * Only supported for the <em>sampler</em> primitive.
+     *
+     * <p><strong>Note:</strong> the IBM Quantum REST API does not transpile circuits.
+     * Non-native gates such as {@code h} must be decomposed before submission —
+     * e.g. {@code h} ≡ {@code rz(π/2); sx; rz(π/2)}.</p>
      */
     private String circuit;
 
@@ -82,8 +86,9 @@ public class IBMQConnectorRequest {
     /**
      * Full Qiskit Runtime job params as a JSON string.
      * Required when {@link #circuitInputMode} is {@link CircuitInputMode#DIRECT_PARAMS}.
+     * Must include {@code "version": 2} for Primitives V2.
      * Example for the sampler primitive:
-     * <pre>{"pubs": [["&lt;circuit&gt;", null, 1024]]}</pre>
+     * <pre>{"version": 2, "pubs": [["&lt;circuit&gt;", null, 1024]]}</pre>
      */
     private String params;
 

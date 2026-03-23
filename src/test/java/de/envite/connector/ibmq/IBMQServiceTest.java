@@ -95,7 +95,7 @@ class IBMQServiceTest {
                         {
                           "program_id": "sampler",
                           "backend": "ibmq_qasm_simulator",
-                          "params": { "pubs": [["%s", null, 512]] }
+                          "params": { "version": 2, "pubs": [["%s", null, 512]] }
                         }
                         """.formatted(CIRCUIT.replace("\"", "\\\""))))
                 .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
@@ -183,6 +183,7 @@ class IBMQServiceTest {
 
     @Test
     void executeCircuit_withOpenQasm_andBlankCircuit_throwsIllegalArgumentException() {
+        expectIamTokenExchange();
         IBMQConnectorRequest request = openQasmRequest(r -> r.setCircuit("  "));
 
         assertThatThrownBy(() -> service.executeCircuit(request))
@@ -196,6 +197,7 @@ class IBMQServiceTest {
 
     @Test
     void executeCircuit_withDirectParams_andBlankParams_throwsIllegalArgumentException() {
+        expectIamTokenExchange();
         IBMQConnectorRequest request = openQasmRequest(r -> {
             r.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
             r.setParams("  ");
@@ -208,6 +210,7 @@ class IBMQServiceTest {
 
     @Test
     void executeCircuit_withDirectParams_andInvalidJson_throwsRuntimeException() {
+        expectIamTokenExchange();
         IBMQConnectorRequest request = openQasmRequest(r -> {
             r.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
             r.setParams("not-valid-json{{{");

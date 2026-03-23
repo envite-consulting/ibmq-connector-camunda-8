@@ -105,7 +105,7 @@
     },
     {
       "label": "Quantum Circuit (OpenQASM)",
-      "description": "OpenQASM 2 or 3 circuit string. The connector wraps it in a Sampler V2 PUB automatically.",
+      "description": "OpenQASM 3 circuit using native basis gates (x, sx, rz, cx). The REST API does not transpile — non-native gates like h must be pre-decomposed, e.g. h ≡ rz(π/2); sx; rz(π/2).",
       "group": "circuit",
       "type": "Text",
       "feel": "optional",
@@ -152,7 +152,7 @@
     },
     {
       "label": "Params (JSON)",
-      "description": "Full Qiskit Runtime job params as a JSON string, e.g. {\"pubs\": [[\"&lt;circuit&gt;\", null, 1024]]}. See <a href=\"https://quantum.cloud.ibm.com/docs/guides/primitives-rest-api\">Primitives with REST API</a> for details.",
+      "description": "Full Qiskit Runtime V2 params as a JSON string, e.g. {\"version\": 2, \"pubs\": [[\"&lt;circuit&gt;\", null, 1024]]}. See <a href=\"https://quantum.cloud.ibm.com/docs/guides/primitives-rest-api\">Primitives with REST API</a> for details.",
       "group": "circuit",
       "type": "Text",
       "feel": "optional",
@@ -162,7 +162,7 @@
     },
     {
       "label": "Params (JSON)",
-      "description": "Full Qiskit Runtime job params as a JSON string, e.g. {\"pubs\": [[\"&lt;circuit&gt;\", null, 1024]]}. See <a href=\"https://quantum.cloud.ibm.com/docs/guides/primitives-rest-api\">Primitives with REST API</a> for details.",
+      "description": "Full Qiskit Runtime V2 params as a JSON string, e.g. {\"version\": 2, \"pubs\": [[\"&lt;circuit&gt;\", null, 1024]]}. See <a href=\"https://quantum.cloud.ibm.com/docs/guides/primitives-rest-api\">Primitives with REST API</a> for details.",
       "group": "circuit",
       "type": "Text",
       "feel": "optional",
