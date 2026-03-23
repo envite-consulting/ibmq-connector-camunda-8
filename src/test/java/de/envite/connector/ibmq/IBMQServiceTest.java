@@ -1,7 +1,8 @@
 package de.envite.connector.ibmq;
 
-import de.envite.connector.ibmq.dto.IBMQConnectorRequest;
 import de.envite.connector.ibmq.dto.IBMQConnectorResponse;
+import de.envite.connector.ibmq.dto.IBMQGetJobResultRequest;
+import de.envite.connector.ibmq.dto.IBMQSubmitJobRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,7 +103,7 @@ class IBMQServiceTest {
         expectJobStatus(STATUS_COMPLETED);
         expectJobResults();
 
-        IBMQConnectorRequest request = openQasmRequest(r -> r.setShots(512));
+        IBMQSubmitJobRequest request = openQasmRequest(r -> r.setShots(512));
         service.executeCircuit(request);
 
         mockServer.verify();
@@ -123,7 +124,7 @@ class IBMQServiceTest {
                 .andExpect(content().json("{\"params\": {\"pubs\": [[\"custom-circuit\", null, 2048]]}}"))
                 .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
 
-        IBMQConnectorRequest request = openQasmRequest(r -> {
+        IBMQSubmitJobRequest request = openQasmRequest(r -> {
             r.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
             r.setParams(customParams);
             r.setWaitForResult(false);
@@ -167,7 +168,7 @@ class IBMQServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(statusResponse("RUNNING"), MediaType.APPLICATION_JSON));
 
-        IBMQConnectorRequest request = openQasmRequest(r -> {
+        IBMQSubmitJobRequest request = openQasmRequest(r -> {
             r.setTimeoutSeconds(1);
             r.setPollIntervalSeconds(1);
         });
@@ -184,7 +185,7 @@ class IBMQServiceTest {
     @Test
     void executeCircuit_withOpenQasm_andBlankCircuit_throwsIllegalArgumentException() {
         expectIamTokenExchange();
-        IBMQConnectorRequest request = openQasmRequest(r -> r.setCircuit("  "));
+        IBMQSubmitJobRequest request = openQasmRequest(r -> r.setCircuit("  "));
 
         assertThatThrownBy(() -> service.executeCircuit(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -198,7 +199,7 @@ class IBMQServiceTest {
     @Test
     void executeCircuit_withDirectParams_andBlankParams_throwsIllegalArgumentException() {
         expectIamTokenExchange();
-        IBMQConnectorRequest request = openQasmRequest(r -> {
+        IBMQSubmitJobRequest request = openQasmRequest(r -> {
             r.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
             r.setParams("  ");
         });
@@ -211,7 +212,7 @@ class IBMQServiceTest {
     @Test
     void executeCircuit_withDirectParams_andInvalidJson_throwsRuntimeException() {
         expectIamTokenExchange();
-        IBMQConnectorRequest request = openQasmRequest(r -> {
+        IBMQSubmitJobRequest request = openQasmRequest(r -> {
             r.setCircuitInputMode(CircuitInputMode.DIRECT_PARAMS);
             r.setParams("not-valid-json{{{");
         });
@@ -219,6 +220,49 @@ class IBMQServiceTest {
         assertThatThrownBy(() -> service.executeCircuit(request))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("parse");
+    }
+
+    // -------------------------------------------------------------------------
+    // Get job result
+    // -------------------------------------------------------------------------
+
+    @Test
+    void getJobResult_whenJobCompleted_returnsResultPayload() {
+        expectIamTokenExchange();
+        expectJobStatus(STATUS_COMPLETED);
+        expectJobResults();
+
+        IBMQConnectorResponse result = service.getJobResult(getJobResultRequest(r -> {}));
+
+        assertThat(result.getJobId()).isEqualTo(JOB_ID);
+        assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
+        assertThat(result.getResult()).isNotNull();
+        mockServer.verify();
+    }
+
+    @Test
+    void getJobResult_whenJobRunning_returnsStatusWithoutResult() {
+        expectIamTokenExchange();
+        expectJobStatus("RUNNING");
+
+        IBMQConnectorResponse result = service.getJobResult(getJobResultRequest(r -> {}));
+
+        assertThat(result.getJobId()).isEqualTo(JOB_ID);
+        assertThat(result.getStatus()).isEqualTo("RUNNING");
+        assertThat(result.getResult()).isNull();
+        mockServer.verify();
+    }
+
+    @Test
+    void getJobResult_whenJobFailed_returnsFailedStatusWithoutResult() {
+        expectIamTokenExchange();
+        expectJobStatus(STATUS_FAILED);
+
+        IBMQConnectorResponse result = service.getJobResult(getJobResultRequest(r -> {}));
+
+        assertThat(result.getStatus()).isEqualTo(STATUS_FAILED);
+        assertThat(result.getResult()).isNull();
+        mockServer.verify();
     }
 
     // -------------------------------------------------------------------------
@@ -276,9 +320,8 @@ class IBMQServiceTest {
                 """.formatted(JOB_ID, status);
     }
 
-    /** Builds a baseline OPEN_QASM request and applies the given customisation. */
-    private IBMQConnectorRequest openQasmRequest(java.util.function.Consumer<IBMQConnectorRequest> customizer) {
-        IBMQConnectorRequest request = new IBMQConnectorRequest();
+    private IBMQSubmitJobRequest openQasmRequest(java.util.function.Consumer<IBMQSubmitJobRequest> customizer) {
+        IBMQSubmitJobRequest request = new IBMQSubmitJobRequest();
         request.setApiKey(API_KEY);
         request.setIbmqUrl(SERVICE_URL);
         request.setIbmqInstance(INSTANCE_CRN);
@@ -290,6 +333,16 @@ class IBMQServiceTest {
         request.setWaitForResult(true);
         request.setTimeoutSeconds(30);
         request.setPollIntervalSeconds(1);
+        customizer.accept(request);
+        return request;
+    }
+
+    private IBMQGetJobResultRequest getJobResultRequest(java.util.function.Consumer<IBMQGetJobResultRequest> customizer) {
+        IBMQGetJobResultRequest request = new IBMQGetJobResultRequest();
+        request.setApiKey(API_KEY);
+        request.setIbmqUrl(SERVICE_URL);
+        request.setIbmqInstance(INSTANCE_CRN);
+        request.setJobId(JOB_ID);
         customizer.accept(request);
         return request;
     }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import de.envite.connector.ibmq.dto.IBMQConnectorRequest;
+import de.envite.connector.ibmq.dto.IBMQSubmitJobRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -29,10 +29,10 @@ public class IBMQParameterHandler {
     /**
      * Builds the job params {@link JsonNode} for the given request.
      *
-     * @param request the connector request
+     * @param request the submit job request
      * @return params payload to be included in the job submission body
      */
-    public JsonNode buildParams(IBMQConnectorRequest request) {
+    public JsonNode buildParams(IBMQSubmitJobRequest request) {
         return switch (request.getCircuitInputMode()) {
             case OPEN_QASM     -> buildOpenQasmParams(request);
             case DIRECT_PARAMS -> parseDirectParams(request);
@@ -47,7 +47,7 @@ public class IBMQParameterHandler {
      * OpenQASM 3 is preferred for modern backends. OpenQASM 2 circuits are accepted
      * by most simulators and real backends via automatic up-conversion.</p>
      */
-    private JsonNode buildOpenQasmParams(IBMQConnectorRequest request) {
+    private JsonNode buildOpenQasmParams(IBMQSubmitJobRequest request) {
         if (request.getCircuit() == null || request.getCircuit().isBlank()) {
             throw new IllegalArgumentException("'circuit' must not be empty when circuitInputMode is OPEN_QASM");
         }
@@ -65,7 +65,7 @@ public class IBMQParameterHandler {
         return params;
     }
 
-    private JsonNode parseDirectParams(IBMQConnectorRequest request) {
+    private JsonNode parseDirectParams(IBMQSubmitJobRequest request) {
         if (request.getParams() == null || request.getParams().isBlank()) {
             throw new IllegalArgumentException("'params' must not be empty when circuitInputMode is DIRECT_PARAMS");
         }

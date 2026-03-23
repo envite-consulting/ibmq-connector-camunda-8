@@ -6,33 +6,19 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
- * Input parameters for the IBMQ connector element template.
+ * Input parameters for the IBMQ connector when submitting a new quantum job ({@link de.envite.connector.ibmq.OperationMode#SUBMIT_JOB}).
  *
- * <p>Carries all configuration needed to authenticate with IBM Cloud, target a backend,
- * and describe the quantum job to run — either as an OpenQASM circuit string or as
- * a raw Qiskit Runtime params JSON document.</p>
+ * <p>Describes the quantum job to run — either as an OpenQASM circuit string
+ * ({@link CircuitInputMode#OPEN_QASM}) or as a raw Qiskit Runtime params JSON document
+ * ({@link CircuitInputMode#DIRECT_PARAMS}). Authentication and endpoint configuration are
+ * inherited from {@link IBMQBaseRequest}.</p>
  */
 @Data
-public class IBMQConnectorRequest {
-
-    /** IBM Cloud API key. Reference a Camunda secret via <code>{{secrets.IBMQ_API_KEY}}</code>. */
-    @NotEmpty
-    private String apiKey;
-
-    /**
-     * IBM Quantum service base URL.
-     * Defaults to the IBM Quantum Platform endpoint.
-     */
-    private String ibmqUrl = "https://quantum.cloud.ibm.com/api";
-
-    /**
-     * IBM Quantum instance Cloud Resource Name (CRN).
-     * Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.
-     */
-    @NotEmpty
-    private String ibmqInstance;
+@EqualsAndHashCode(callSuper = true)
+public class IBMQSubmitJobRequest extends IBMQBaseRequest {
 
     /** Target quantum backend, e.g. <code>ibm_brisbane</code> or <code>ibmq_qasm_simulator</code>. */
     @NotEmpty
