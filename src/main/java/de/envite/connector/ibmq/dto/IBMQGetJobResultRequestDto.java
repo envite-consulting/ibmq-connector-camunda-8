@@ -2,9 +2,9 @@ package de.envite.connector.ibmq.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import lombok.EqualsAndHashCode;
-import lombok.experimental.SuperBuilder;
+import lombok.Getter;
 import lombok.ToString;
-import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
 /**
@@ -15,7 +15,7 @@ import lombok.extern.jackson.Jacksonized;
  * driven by a timer intermediate event, as an alternative to blocking inside the connector.
  * Authentication and endpoint configuration are inherited from {@link IBMQBaseRequest}.</p>
  */
-@Value
+@Getter
 @SuperBuilder
 @Jacksonized
 @EqualsAndHashCode(callSuper = true)
@@ -24,5 +24,5 @@ public class IBMQGetJobResultRequestDto extends IBMQBaseRequest {
 
     /** ID of the previously submitted IBM Quantum job. */
     @NotEmpty
-    String jobId;
+    private final String jobId;
 }

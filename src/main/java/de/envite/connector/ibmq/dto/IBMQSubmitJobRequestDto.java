@@ -5,10 +5,11 @@ import de.envite.connector.ibmq.CircuitInputMode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
-import lombok.experimental.SuperBuilder;
+import lombok.Getter;
 import lombok.ToString;
-import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
 /**
@@ -20,7 +21,7 @@ import lombok.extern.jackson.Jacksonized;
  * ({@link CircuitInputMode#DIRECT_PARAMS}). Authentication and endpoint configuration are
  * inherited from {@link IBMQBaseRequest}.</p>
  */
-@Value
+@Getter
 @SuperBuilder
 @Jacksonized
 @EqualsAndHashCode(callSuper = true)
@@ -29,14 +30,14 @@ public class IBMQSubmitJobRequestDto extends IBMQBaseRequest {
 
     /** Target quantum backend, e.g. <code>ibm_brisbane</code> or <code>ibmq_qasm_simulator</code>. */
     @NotEmpty
-    String backend;
+    private final String backend;
 
     /**
      * Qiskit Runtime program to execute.
      * Supported values: <code>sampler</code>, <code>estimator</code>.
      */
     @NotEmpty
-    String programId;
+    private final String programId;
 
     /**
      * Determines how the quantum circuit is provided.
@@ -47,8 +48,8 @@ public class IBMQSubmitJobRequestDto extends IBMQBaseRequest {
      */
     @NotNull
     @JsonProperty("CircuitInputMode")
-    @lombok.Builder.Default
-    CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
+    @Builder.Default
+    private final CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
 
     /**
      * OpenQASM 3 circuit string using native basis gates ({@code x}, {@code sx}, {@code rz}, {@code cx}).
@@ -59,7 +60,7 @@ public class IBMQSubmitJobRequestDto extends IBMQBaseRequest {
      * Non-native gates such as {@code h} must be decomposed before submission —
      * e.g. {@code h} ≡ {@code rz(π/2); sx; rz(π/2)}.</p>
      */
-    String circuit;
+    private final String circuit;
 
     /**
      * OpenQASM version of the supplied {@link #circuit}.
@@ -68,16 +69,16 @@ public class IBMQSubmitJobRequestDto extends IBMQBaseRequest {
      *   <li>{@code 3} – OpenQASM 3.0 (preferred for modern IBM Quantum backends)</li>
      * </ul>
      */
-    @lombok.Builder.Default
-    Integer qasmVersion = 3;
+    @Builder.Default
+    private final Integer qasmVersion = 3;
 
     /**
      * Number of shots (circuit repetitions) when using {@link CircuitInputMode#OPEN_QASM}.
      * Ignored in {@link CircuitInputMode#DIRECT_PARAMS} mode.
      */
     @Min(1)
-    @lombok.Builder.Default
-    Integer shots = 1024;
+    @Builder.Default
+    private final Integer shots = 1024;
 
     /**
      * Full Qiskit Runtime job params as a JSON string.
@@ -86,19 +87,19 @@ public class IBMQSubmitJobRequestDto extends IBMQBaseRequest {
      * Example for the sampler primitive:
      * <pre>{"version": 2, "pubs": [["&lt;circuit&gt;", null, 1024]]}</pre>
      */
-    String params;
+    private final String params;
 
     /** When <code>true</code> the connector polls until the job reaches a terminal state. */
-    @lombok.Builder.Default
-    Boolean waitForResult = true;
+    @Builder.Default
+    private final Boolean waitForResult = true;
 
     /** Maximum time in seconds to wait for a result before failing. */
     @Min(1)
-    @lombok.Builder.Default
-    Integer timeoutSeconds = 300;
+    @Builder.Default
+    private final Integer timeoutSeconds = 300;
 
     /** Polling interval in seconds when <code>waitForResult</code> is <code>true</code>. */
     @Min(1)
-    @lombok.Builder.Default
-    Integer pollIntervalSeconds = 5;
+    @Builder.Default
+    private final Integer pollIntervalSeconds = 5;
 }

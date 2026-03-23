@@ -3,18 +3,21 @@ package de.envite.connector.ibmq.dto;
 import de.envite.connector.ibmq.OperationMode;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import lombok.Value;
-import lombok.experimental.NonFinal;
 import lombok.extern.jackson.Jacksonized;
 
 /**
  * Fields common to all IBMQ connector operations.
  */
-@Value
-@NonFinal
+@Getter
 @SuperBuilder
 @Jacksonized
+@EqualsAndHashCode
+@ToString
 public class IBMQBaseRequest {
 
     /**
@@ -22,24 +25,24 @@ public class IBMQBaseRequest {
      * Defaults to {@link OperationMode#SUBMIT_JOB} for backwards compatibility.
      */
     @NotNull
-    @lombok.Builder.Default
-    OperationMode operationMode = OperationMode.SUBMIT_JOB;
+    @Builder.Default
+    private final OperationMode operationMode = OperationMode.SUBMIT_JOB;
 
     /** IBM Cloud API key. Reference a Camunda secret via <code>{{secrets.IBMQ_API_KEY}}</code>. */
     @NotEmpty
-    String apiKey;
+    private final String apiKey;
 
     /**
      * IBM Quantum service base URL.
      * Defaults to the IBM Quantum Platform endpoint.
      */
-    @lombok.Builder.Default
-    String ibmqUrl = "https://quantum.cloud.ibm.com/api";
+    @Builder.Default
+    private final String ibmqUrl = "https://quantum.cloud.ibm.com/api";
 
     /**
      * IBM Quantum instance Cloud Resource Name (CRN).
      * Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.
      */
     @NotEmpty
-    String ibmqInstance;
+    private final String ibmqInstance;
 }
