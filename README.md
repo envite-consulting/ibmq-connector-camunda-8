@@ -74,7 +74,7 @@ Import `element-templates/ibmq-connector.json` into your Camunda Modeler to get 
 ### 4. Model and Deploy a Process
 
 Example workflows are provided in `example/` (see [above](#ibm-quantum-connector-for-camunda-8-) for a description of each).
-The connector can automatically deploy the blocking example workflow and its forms to your Camunda cluster on startup by enabling the following property in `application.properties`:
+The connector can automatically deploy the example workflows and its forms to your Camunda cluster on startup by enabling the following property in `application.properties`:
 
 ```properties
 ibmq.example.deploy=true
