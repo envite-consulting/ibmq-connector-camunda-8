@@ -54,7 +54,8 @@
       "type": "textarea",
       "key": "circuit",
       "label": "Quantum Circuit (OpenQASM)",
-      "description": "OpenQASM 2 or 3 circuit string. Required when Circuit Input Mode is OpenQASM."
+      "description": "OpenQASM 3 circuit using native basis gates only (x, sx, rz, cx). The REST API does not transpile — non-native gates like h will be rejected by real hardware backends.",
+      "defaultValue": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\nqubit[1] q;\nrz(pi/2) q[0];\nsx q[0];\nrz(pi/2) q[0];"
     },
     {
       "type": "number",
