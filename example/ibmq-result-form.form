@@ -16,10 +16,10 @@
       "readonly": true
     },
     {
-      "type": "link",
+      "type": "textfield",
       "key": "ibmqResult.resultUrl",
-      "label": "View Results",
-      "text": "Open in IBM Quantum"
+      "label": "IBM Quantum Job URL",
+      "readonly": true
     }
   ]
 }

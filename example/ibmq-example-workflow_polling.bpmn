@@ -76,7 +76,7 @@
         <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="3" />
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="ibmqCheckResult" />
-          <zeebe:header key="resultExpression" value="= {ibmqStatus: response.status, ibmqResult: {jobId: ibmqJobId, status: response.status, result: response.result, resultUrl: response.resultUrl}}" />
+          <zeebe:header key="resultExpression" value="= {ibmqStatus: response.status, ibmqResult: {jobId: response.jobId, status: response.status, result: response.result, resultUrl: response.resultUrl}}" />
         </zeebe:taskHeaders>
         <zeebe:ioMapping>
           <zeebe:input source="= &quot;GET_JOB_RESULT&quot;" target="operationMode" />
