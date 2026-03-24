@@ -16,10 +16,10 @@
       "readonly": true
     },
     {
-      "type": "textarea",
-      "key": "ibmqResult.result",
-      "label": "Result",
-      "readonly": true
+      "type": "link",
+      "key": "ibmqResult.resultUrl",
+      "label": "View Results",
+      "text": "Open in IBM Quantum"
     }
   ]
 }

@@ -35,7 +35,7 @@
         <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="3" />
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="ibmqResult" />
-          <zeebe:header key="resultExpression" value="= {jobId: response.jobId, status: response.status, result: response.result}" />
+          <zeebe:header key="resultExpression" value="= {jobId: response.jobId, status: response.status, result: response.result, resultUrl: response.resultUrl}" />
         </zeebe:taskHeaders>
       </extensionElements>
       <incoming>to-quantum</incoming>

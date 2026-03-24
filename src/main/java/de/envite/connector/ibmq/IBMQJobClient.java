@@ -52,9 +52,9 @@ public class IBMQJobClient {
         jobBody.put(FIELD_BACKEND, request.getBackend());
         jobBody.set(FIELD_PARAMS, params);
 
-        log.debug("[IBMQJobClient] Submitting job: URL={}, backend={}, programId={}", request.getIbmqUrl() + PATH_JOBS, request.getBackend(), request.getProgramId());
+        log.debug("[IBMQJobClient] Submitting job: URL={}, backend={}, programId={}", request.getIbmqUrl() + API_PATH_JOBS, request.getBackend(), request.getProgramId());
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                request.getIbmqUrl() + PATH_JOBS,
+                request.getIbmqUrl() + API_PATH_JOBS,
                 new HttpEntity<>(jobBody, apiHeaders(accessToken, request.getIbmqInstance())),
                 JsonNode.class
         );
@@ -102,13 +102,21 @@ public class IBMQJobClient {
      * @return the raw result payload as a {@link JsonNode}
      */
     public Object getJobResults(IBMQBaseRequest request, String accessToken, String jobId) {
-        ResponseEntity<JsonNode> response = restTemplate.exchange(
-                request.getIbmqUrl() + PATH_JOBS + "/" + jobId + PATH_RESULTS,
+        ResponseEntity<String> response = restTemplate.exchange(
+                request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId + API_PATH_RESULTS,
                 HttpMethod.GET,
                 new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
-                JsonNode.class
+                String.class
         );
-        return requireBody(response, "job results");
+
+        String body = response.getBody();
+        if (body == null) throw new IllegalStateException("Empty response body for job results");
+
+        try {
+            return objectMapper.readTree(body);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse job results as JSON", e);
+        }
     }
 
     /**
@@ -116,7 +124,7 @@ public class IBMQJobClient {
      */
     public String getJobStatus(IBMQBaseRequest request, String accessToken, String jobId) {
         ResponseEntity<JsonNode> response = restTemplate.exchange(
-                request.getIbmqUrl() + PATH_JOBS + "/" + jobId,
+                request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId,
                 HttpMethod.GET,
                 new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
                 JsonNode.class

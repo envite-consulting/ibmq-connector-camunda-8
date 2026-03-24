@@ -91,7 +91,7 @@ class IBMQServiceTest {
     @Test
     void executeCircuit_withOpenQasm_submitsCorrectPubStructure() {
         expectIamTokenExchange();
-        mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS))
+        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(content().json("""
                         {
@@ -119,7 +119,7 @@ class IBMQServiceTest {
                 {"pubs": [["custom-circuit", null, 2048]]}
                 """;
         expectIamTokenExchange();
-        mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS))
+        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(content().json("{\"params\": {\"pubs\": [[\"custom-circuit\", null, 2048]]}}"))
                 .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
@@ -162,7 +162,7 @@ class IBMQServiceTest {
     void executeCircuit_whenJobDoesNotComplete_throwsTimeoutException() {
         expectIamTokenExchange();
         expectJobSubmission();
-        mockServer.expect(manyTimes(), requestTo(SERVICE_URL + PATH_JOBS + "/" + JOB_ID))
+        mockServer.expect(manyTimes(), requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(statusResponse("RUNNING"), MediaType.APPLICATION_JSON));
 
@@ -269,7 +269,7 @@ class IBMQServiceTest {
     }
 
     private void expectJobSubmission() {
-        mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS))
+        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
                 .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
@@ -278,7 +278,7 @@ class IBMQServiceTest {
     }
 
     private void expectJobStatus(String status) {
-        mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS + "/" + JOB_ID))
+        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID))
                 .andExpect(method(HttpMethod.GET))
                 .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
                 .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
@@ -287,7 +287,7 @@ class IBMQServiceTest {
     }
 
     private void expectJobResults() {
-        mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS + "/" + JOB_ID + PATH_RESULTS))
+        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID + API_PATH_RESULTS))
                 .andExpect(method(HttpMethod.GET))
                 .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
                 .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
