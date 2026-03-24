@@ -27,7 +27,7 @@ Follow the steps under [How to Run](#-how-to-run), and then import the file into
 * 🚀 [How to Run](#-how-to-run)
 * 📚 [Connector Documentation](#-connector-documentation)
     * [Getting Started](docs/getting-started.md)
-    * [Configuration Properties for the Connector](docs/configuration-properties.md)
+    * [Connector Configuration and Output Reference](docs/connector-reference.md)
     * [Use Predefined Quantum Algorithms](docs/use-predefined-algorithms.md)
     * [Example Use Cases & HowTos](docs/usecases.md)
 * 🛠️ [Development & Project Setup](#-development--project-setup)
@@ -86,13 +86,13 @@ If you prefer to deploy manually, upload the desired workflow from `example/` to
 In case you published the element template to a project, upload the workflow to the **same project** so Web Modeler automatically links the template and displays the connector with its icon.
 
 To model your own process, add a service task and apply the **IBM Quantum Connector** element template, then fill in the required properties.
-The documentation of all provided configuration properties can be found [here](docs/configuration-properties.md).
+The full configuration and output reference can be found [here](docs/connector-reference.md).
 
 ## 📚 Connector Documentation
 
 Learn how to effectively use the connectors in your processes:
 * [Getting Started](docs/getting-started.md): Details of how to get started with the IBM Quantum Connector
-* [Configuration Properties for the Connector](docs/configuration-properties.md): Summary of all configuration properties of the connector
+* [Connector Configuration and Output Reference](docs/connector-reference.md): All configuration properties and the connector output fields available for use in result expressions and downstream tasks
 * [Use Predefined Quantum Algorithms](docs/use-predefined-algorithms.md): Information about how to execute predefined quantum algorithms using the IBM Quantum Connector by utilizing a circuit generating side-car.
 * [Example Use Cases & HowTos](docs/usecases.md): TODO
 

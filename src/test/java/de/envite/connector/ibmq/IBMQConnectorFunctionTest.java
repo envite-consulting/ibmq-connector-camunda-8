@@ -33,7 +33,7 @@ class IBMQConnectorFunctionTest {
     @Test
     void execute_withSubmitJob_delegatesToExecuteCircuit() {
         IBMQSubmitJobRequestDto submitRequest = buildOpenQasmRequest();
-        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-123", STATUS_COMPLETED, null);
+        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-123", STATUS_COMPLETED, null, null);
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.SUBMIT_JOB));
@@ -50,7 +50,7 @@ class IBMQConnectorFunctionTest {
     @Test
     void execute_withGetJobResult_delegatesToGetJobResult() {
         IBMQGetJobResultRequestDto getRequest = buildGetJobResultRequest();
-        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-456", STATUS_COMPLETED, null);
+        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-456", STATUS_COMPLETED, null, null);
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.GET_JOB_RESULT));
@@ -67,7 +67,7 @@ class IBMQConnectorFunctionTest {
     @Test
     void execute_withDirectParams_delegatesToExecuteCircuit() {
         IBMQSubmitJobRequestDto submitRequest = buildDirectParamsRequest();
-        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-456", STATUS_COMPLETED, null);
+        IBMQConnectorResponseDto expected = new IBMQConnectorResponseDto("job-456", STATUS_COMPLETED, null, null);
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.SUBMIT_JOB));
@@ -87,7 +87,7 @@ class IBMQConnectorFunctionTest {
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.SUBMIT_JOB));
         when(context.bindVariables(IBMQSubmitJobRequestDto.class)).thenReturn(submitRequest);
-        when(ibmqService.executeCircuit(any())).thenReturn(new IBMQConnectorResponseDto("job-789", STATUS_QUEUED, null));
+        when(ibmqService.executeCircuit(any())).thenReturn(new IBMQConnectorResponseDto("job-789", STATUS_QUEUED, null, null));
 
         function.execute(context);
 
@@ -115,7 +115,7 @@ class IBMQConnectorFunctionTest {
                 .circuit("OPENQASM 3.0; qubit[1] q; h q[0];")
                 .waitForResult(false)
                 .build();
-        IBMQConnectorResponseDto queuedResult = new IBMQConnectorResponseDto("job-123", STATUS_QUEUED, null);
+        IBMQConnectorResponseDto queuedResult = new IBMQConnectorResponseDto("job-123", STATUS_QUEUED, null, null);
 
         OutboundConnectorContext context = mock(OutboundConnectorContext.class);
         when(context.bindVariables(IBMQBaseRequest.class)).thenReturn(baseRequest(OperationMode.SUBMIT_JOB));
