@@ -101,7 +101,7 @@
     <sequenceFlow id="to-timer-loop" name="Still running" sourceRef="status-gateway" targetRef="poll-timer" />
 
     <sequenceFlow id="to-review" name="Done" sourceRef="status-gateway" targetRef="review-task">
-      <conditionExpression xsi:type="tFormalExpression">= ["COMPLETED","FAILED","CANCELLED","ERROR"] contains ibmqStatus</conditionExpression>
+      <conditionExpression xsi:type="tFormalExpression">= ibmqStatus in ["COMPLETED","FAILED","CANCELLED","ERROR"]</conditionExpression>
     </sequenceFlow>
 
     <userTask id="review-task" name="Review&#10;quantum result">
@@ -201,7 +201,7 @@
         <di:waypoint x="755" y="117" />
         <di:waypoint x="830" y="117" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="783" y="99" width="27" height="14" />
+          <dc:Bounds x="766" y="99" width="27" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
