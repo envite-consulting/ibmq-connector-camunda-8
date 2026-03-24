@@ -1,49 +1,44 @@
 package de.envite.connector.ibmq.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import de.envite.connector.ibmq.CircuitInputMode;
+import de.envite.connector.ibmq.model.CircuitInputMode;
+import de.envite.connector.ibmq.model.OperationMode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.jackson.Jacksonized;
 
 /**
- * Input parameters for the IBMQ connector element template.
+ * Input parameters for the IBMQ connector when submitting a new quantum job
+ * ({@link OperationMode#SUBMIT_JOB}).
  *
- * <p>Carries all configuration needed to authenticate with IBM Cloud, target a backend,
- * and describe the quantum job to run — either as an OpenQASM circuit string or as
- * a raw Qiskit Runtime params JSON document.</p>
+ * <p>Describes the quantum job to run — either as an OpenQASM circuit string
+ * ({@link CircuitInputMode#OPEN_QASM}) or as a raw Qiskit Runtime params JSON document
+ * ({@link CircuitInputMode#DIRECT_PARAMS}). Authentication and endpoint configuration are
+ * inherited from {@link IBMQBaseRequest}.</p>
  */
-@Data
-public class IBMQConnectorRequest {
-
-    /** IBM Cloud API key. Reference a Camunda secret via <code>{{secrets.IBMQ_API_KEY}}</code>. */
-    @NotEmpty
-    private String apiKey;
-
-    /**
-     * IBM Quantum service base URL.
-     * Defaults to the IBM Quantum Platform endpoint.
-     */
-    private String ibmqUrl = "https://quantum.cloud.ibm.com/api";
-
-    /**
-     * IBM Quantum instance Cloud Resource Name (CRN).
-     * Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.
-     */
-    @NotEmpty
-    private String ibmqInstance;
+@Getter
+@SuperBuilder
+@Jacksonized
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class IBMQSubmitJobRequestDto extends IBMQBaseRequest {
 
     /** Target quantum backend, e.g. <code>ibm_brisbane</code> or <code>ibmq_qasm_simulator</code>. */
     @NotEmpty
-    private String backend;
+    private final String backend;
 
     /**
      * Qiskit Runtime program to execute.
      * Supported values: <code>sampler</code>, <code>estimator</code>.
      */
     @NotEmpty
-    private String programId;
+    private final String programId;
 
     /**
      * Determines how the quantum circuit is provided.
@@ -54,7 +49,8 @@ public class IBMQConnectorRequest {
      */
     @NotNull
     @JsonProperty("CircuitInputMode")
-    private CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
+    @Builder.Default
+    private final CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
 
     /**
      * OpenQASM 3 circuit string using native basis gates ({@code x}, {@code sx}, {@code rz}, {@code cx}).
@@ -65,7 +61,7 @@ public class IBMQConnectorRequest {
      * Non-native gates such as {@code h} must be decomposed before submission —
      * e.g. {@code h} ≡ {@code rz(π/2); sx; rz(π/2)}.</p>
      */
-    private String circuit;
+    private final String circuit;
 
     /**
      * OpenQASM version of the supplied {@link #circuit}.
@@ -74,14 +70,16 @@ public class IBMQConnectorRequest {
      *   <li>{@code 3} – OpenQASM 3.0 (preferred for modern IBM Quantum backends)</li>
      * </ul>
      */
-    private Integer qasmVersion = 3;
+    @Builder.Default
+    private final Integer qasmVersion = 3;
 
     /**
      * Number of shots (circuit repetitions) when using {@link CircuitInputMode#OPEN_QASM}.
      * Ignored in {@link CircuitInputMode#DIRECT_PARAMS} mode.
      */
     @Min(1)
-    private Integer shots = 1024;
+    @Builder.Default
+    private final Integer shots = 1024;
 
     /**
      * Full Qiskit Runtime job params as a JSON string.
@@ -90,16 +88,19 @@ public class IBMQConnectorRequest {
      * Example for the sampler primitive:
      * <pre>{"version": 2, "pubs": [["&lt;circuit&gt;", null, 1024]]}</pre>
      */
-    private String params;
+    private final String params;
 
     /** When <code>true</code> the connector polls until the job reaches a terminal state. */
-    private Boolean waitForResult = true;
+    @Builder.Default
+    private final Boolean waitForResult = true;
 
     /** Maximum time in seconds to wait for a result before failing. */
     @Min(1)
-    private Integer timeoutSeconds = 300;
+    @Builder.Default
+    private final Integer timeoutSeconds = 300;
 
     /** Polling interval in seconds when <code>waitForResult</code> is <code>true</code>. */
     @Min(1)
-    private Integer pollIntervalSeconds = 5;
+    @Builder.Default
+    private final Integer pollIntervalSeconds = 5;
 }

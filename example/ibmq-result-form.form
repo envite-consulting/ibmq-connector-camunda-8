@@ -16,9 +16,9 @@
       "readonly": true
     },
     {
-      "type": "textarea",
-      "key": "ibmqResult.result",
-      "label": "Result",
+      "type": "textfield",
+      "key": "ibmqResult.resultUrl",
+      "label": "IBM Quantum Job URL",
       "readonly": true
     }
   ]

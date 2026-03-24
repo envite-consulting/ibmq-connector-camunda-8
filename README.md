@@ -10,10 +10,13 @@
 
 TODO: general description
 
-An [example workflow](example/ibmq-example-workflow.bpmn) is provided in the `example/` directory.
-It includes a start event with an input form for all relevant connector parameters,
-the IBM Quantum Connector service task, a user task for reviewing the result, and an end event.
-Follow the steps under [How to Run](#-how-to-run), and then, import the file into Camunda Modeler.
+Two example workflows are provided in the `example/` directory:
+
+- **[Blocking](example/ibmq-example-workflow_blocking.bpmn)** — submits a circuit and blocks the connector thread until the job reaches a terminal state (`waitForResult=true`). This is simple to use, but quantum jobs on real hardware backends may queue for longer than the configured timeout, causing the connector to throw a timeout exception and Camunda to re-execute the circuit. Further, this can lead to an incidents if all retries are used.
+- **[Polling](example/ibmq-example-workflow_polling.bpmn)** — submits the job without waiting (`waitForResult=false`), then polls the result every 30 seconds via a BPMN timer loop using the `GET_JOB_RESULT` operation. Recommended for real hardware backends where execution time is unpredictable.
+
+Both include a start event with an input form for all relevant connector parameters, the IBM Quantum Connector service task, a user task for reviewing the result, and an end event.
+Follow the steps under [How to Run](#-how-to-run), and then import the file into Camunda Modeler.
 
 ![Example workflow in Camunda Modeler](docs/images/example-workflow-camunda-modeler.png)
 
@@ -24,7 +27,7 @@ Follow the steps under [How to Run](#-how-to-run), and then, import the file int
 * 🚀 [How to Run](#-how-to-run)
 * 📚 [Connector Documentation](#-connector-documentation)
     * [Getting Started](docs/getting-started.md)
-    * [Configuration Properties for the Connector](docs/configuration-properties.md)
+    * [Connector Configuration and Output Reference](docs/connector-reference.md)
     * [Use Predefined Quantum Algorithms](docs/use-predefined-algorithms.md)
     * [Example Use Cases & HowTos](docs/usecases.md)
 * 🛠️ [Development & Project Setup](#-development--project-setup)
@@ -70,8 +73,8 @@ Import `element-templates/ibmq-connector.json` into your Camunda Modeler to get 
 
 ### 4. Model and Deploy a Process
 
-An [example workflow](example/ibmq-example-workflow.bpmn) is provided in `example/`.
-The connector can automatically deploy the example workflow and its forms to your Camunda cluster on startup by enabling the following property in `application.properties`:
+Example workflows are provided in `example/` (see [above](#ibm-quantum-connector-for-camunda-8-) for a description of each).
+The connector can automatically deploy the example workflows and their forms to your Camunda cluster on startup by enabling the following property in `application.properties`:
 
 ```properties
 ibmq.example.deploy=true
@@ -79,17 +82,17 @@ ibmq.example.deploy=true
 
 > **Note:** Keep this set to `false` (the default) in production environments.
 
-If you prefer to deploy manually, upload `example/ibmq-example-workflow.bpmn`, `example/ibmq-input-form.form`, and `example/ibmq-result-form.form` to your cluster — either via Camunda Web Modeler or the Zeebe API.
+If you prefer to deploy manually, upload the desired workflow from `example/` together with `example/ibmq-input-form.form` and `example/ibmq-result-form.form` to your cluster — either via Camunda Web Modeler or the Zeebe API.
 In case you published the element template to a project, upload the workflow to the **same project** so Web Modeler automatically links the template and displays the connector with its icon.
 
 To model your own process, add a service task and apply the **IBM Quantum Connector** element template, then fill in the required properties.
-The documentation of all provided configuration properties can be found [here](docs/configuration-properties.md).
+The full configuration and output reference can be found [here](docs/connector-reference.md).
 
 ## 📚 Connector Documentation
 
 Learn how to effectively use the connectors in your processes:
 * [Getting Started](docs/getting-started.md): Details of how to get started with the IBM Quantum Connector
-* [Configuration Properties for the Connector](docs/configuration-properties.md): Summary of all configuration properties of the connector
+* [Connector Configuration and Output Reference](docs/connector-reference.md): All configuration properties and the connector output fields available for use in result expressions and downstream tasks
 * [Use Predefined Quantum Algorithms](docs/use-predefined-algorithms.md): Information about how to execute predefined quantum algorithms using the IBM Quantum Connector by utilizing a circuit generating side-car.
 * [Example Use Cases & HowTos](docs/usecases.md): TODO
 

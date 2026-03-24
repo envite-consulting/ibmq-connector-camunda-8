@@ -168,7 +168,7 @@ class IBMQWorkflowTest {
     }
 
     private void expectJobSubmission(String jobId) {
-        mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS))
+        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
                 .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
@@ -181,7 +181,7 @@ class IBMQWorkflowTest {
     }
 
     private void expectJobStatus(String jobId, String status) {
-        mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS + "/" + jobId))
+        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + jobId))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(
                         """
@@ -191,7 +191,7 @@ class IBMQWorkflowTest {
     }
 
     private void expectJobResults(String jobId) {
-        mockServer.expect(requestTo(SERVICE_URL + PATH_JOBS + "/" + jobId + PATH_RESULTS))
+        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + jobId + API_PATH_RESULTS))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(
                         """

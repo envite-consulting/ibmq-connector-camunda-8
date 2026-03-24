@@ -3,7 +3,8 @@ package de.envite.connector.ibmq;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import de.envite.connector.ibmq.dto.IBMQConnectorRequest;
+import de.envite.connector.ibmq.dto.IBMQBaseRequest;
+import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -45,15 +46,15 @@ public class IBMQJobClient {
      * @param params      pre-built job parameters (e.g. PUBs for sampler, observables for estimator)
      * @return the job ID assigned by the IBM Quantum runtime
      */
-    public String submitJob(IBMQConnectorRequest request, String accessToken, JsonNode params) {
+    public String submitJob(IBMQSubmitJobRequestDto request, String accessToken, JsonNode params) {
         ObjectNode jobBody = objectMapper.createObjectNode();
         jobBody.put(FIELD_PROGRAM_ID, request.getProgramId());
         jobBody.put(FIELD_BACKEND, request.getBackend());
         jobBody.set(FIELD_PARAMS, params);
 
-        log.debug("[IBMQJobClient] Submitting job: URL={}, backend={}, programId={}", request.getIbmqUrl() + PATH_JOBS, request.getBackend(), request.getProgramId());
+        log.debug("[IBMQJobClient] Submitting job: URL={}, backend={}, programId={}", request.getIbmqUrl() + API_PATH_JOBS, request.getBackend(), request.getProgramId());
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                request.getIbmqUrl() + PATH_JOBS,
+                request.getIbmqUrl() + API_PATH_JOBS,
                 new HttpEntity<>(jobBody, apiHeaders(accessToken, request.getIbmqInstance())),
                 JsonNode.class
         );
@@ -70,7 +71,7 @@ public class IBMQJobClient {
      * @return the terminal status ({@code COMPLETED}, {@code FAILED}, {@code CANCELLED}, or {@code ERROR})
      * @throws RuntimeException if the timeout is exceeded or polling is interrupted
      */
-    public String pollUntilTerminal(IBMQConnectorRequest request, String accessToken, String jobId) {
+    public String pollUntilTerminal(IBMQSubmitJobRequestDto request, String accessToken, String jobId) {
         Instant deadline = Instant.now().plusSeconds(request.getTimeoutSeconds());
 
         while (Instant.now().isBefore(deadline)) {
@@ -100,22 +101,30 @@ public class IBMQJobClient {
      * @param jobId       ID of the completed job
      * @return the raw result payload as a {@link JsonNode}
      */
-    public Object getJobResults(IBMQConnectorRequest request, String accessToken, String jobId) {
-        ResponseEntity<JsonNode> response = restTemplate.exchange(
-                request.getIbmqUrl() + PATH_JOBS + "/" + jobId + PATH_RESULTS,
+    public Object getJobResults(IBMQBaseRequest request, String accessToken, String jobId) {
+        ResponseEntity<String> response = restTemplate.exchange(
+                request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId + API_PATH_RESULTS,
                 HttpMethod.GET,
                 new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
-                JsonNode.class
+                String.class
         );
-        return requireBody(response, "job results");
+
+        String body = response.getBody();
+        if (body == null) throw new IllegalStateException("Empty response body for job results");
+
+        try {
+            return objectMapper.readTree(body);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse job results as JSON", e);
+        }
     }
 
     /**
      * Fetches the current status of a job.
      */
-    private String getJobStatus(IBMQConnectorRequest request, String accessToken, String jobId) {
+    public String getJobStatus(IBMQBaseRequest request, String accessToken, String jobId) {
         ResponseEntity<JsonNode> response = restTemplate.exchange(
-                request.getIbmqUrl() + PATH_JOBS + "/" + jobId,
+                request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId,
                 HttpMethod.GET,
                 new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
                 JsonNode.class

@@ -17,6 +17,7 @@
     "value": "bpmn:ServiceTask"
   },
   "groups": [
+    { "id": "operation",      "label": "Operation" },
     { "id": "ibmq",           "label": "IBMQ" },
     { "id": "circuit",        "label": "Quantum Circuit" },
     { "id": "execution",      "label": "Execution" },
@@ -28,6 +29,20 @@
       "type": "Hidden",
       "value": "de.envite:ibmq-connector:1",
       "binding": { "type": "zeebe:taskDefinition", "property": "type" }
+    },
+
+    {
+      "id": "operationMode",
+      "label": "Operation",
+      "description": "Choose <em>Submit Job</em> to queue a new quantum job. Choose <em>Get Job Result</em> to check the status of a previously submitted job — use this inside a BPMN polling loop with a timer to avoid long-running connector threads.",
+      "group": "operation",
+      "type": "Dropdown",
+      "value": "SUBMIT_JOB",
+      "choices": [
+        { "name": "Submit Job",      "value": "SUBMIT_JOB" },
+        { "name": "Get Job Result",  "value": "GET_JOB_RESULT" }
+      ],
+      "binding": { "type": "zeebe:input", "name": "operationMode" }
     },
 
     {
@@ -59,6 +74,17 @@
     },
 
     {
+      "label": "Job ID",
+      "description": "ID of the previously submitted IBM Quantum job to check",
+      "group": "ibmq",
+      "type": "String",
+      "feel": "optional",
+      "binding": { "type": "zeebe:input", "name": "jobId" },
+      "constraints": { "notEmpty": true },
+      "condition": { "property": "operationMode", "equals": "GET_JOB_RESULT" }
+    },
+
+    {
       "label": "IBMQ Backend",
       "description": "Target quantum computer for the execution",
       "group": "ibmq",
@@ -72,7 +98,8 @@
         { "name": "Custom (FEEL)",   "value": "custom" }
       ],
       "binding": { "type": "zeebe:input", "name": "backend" },
-      "constraints": { "notEmpty": true }
+      "constraints": { "notEmpty": true },
+      "condition": { "property": "operationMode", "equals": "SUBMIT_JOB" }
     },
 
     {
@@ -87,7 +114,8 @@
         { "name": "Estimator", "value": "estimator" }
       ],
       "binding": { "type": "zeebe:input", "name": "programId" },
-      "constraints": { "notEmpty": true }
+      "constraints": { "notEmpty": true },
+      "condition": { "property": "operationMode", "equals": "SUBMIT_JOB" }
     },
     {
       "id": "circuitInputMode",
@@ -101,7 +129,12 @@
         { "name": "Direct Params (JSON)", "value": "DIRECT_PARAMS" }
       ],
       "binding": { "type": "zeebe:input", "name": "CircuitInputMode" },
-      "condition": { "property": "programId", "equals": "sampler" }
+      "condition": {
+        "allMatch": [
+          { "property": "operationMode", "equals": "SUBMIT_JOB" },
+          { "property": "programId",     "equals": "sampler"    }
+        ]
+      }
     },
     {
       "label": "Quantum Circuit (OpenQASM)",
@@ -158,7 +191,12 @@
       "feel": "optional",
       "binding": { "type": "zeebe:input", "name": "params" },
       "constraints": { "notEmpty": true },
-      "condition": { "property": "programId", "equals": "estimator" }
+      "condition": {
+        "allMatch": [
+          { "property": "operationMode", "equals": "SUBMIT_JOB" },
+          { "property": "programId",     "equals": "estimator"  }
+        ]
+      }
     },
     {
       "label": "Params (JSON)",
@@ -170,6 +208,7 @@
       "constraints": { "notEmpty": true },
       "condition": {
         "allMatch": [
+          { "property": "operationMode",    "equals": "SUBMIT_JOB"    },
           { "property": "programId",        "equals": "sampler"       },
           { "property": "circuitInputMode",  "equals": "DIRECT_PARAMS" }
         ]
@@ -178,11 +217,12 @@
 
     {
       "label": "Wait for Result",
-      "description": "Poll until the job reaches a terminal state before completing the task",
+      "description": "Poll until the job reaches a terminal state before completing the task. Disable this and use <em>Get Job Result</em> in a BPMN timer loop to avoid HTTP/2 inactivity timeouts on long-running quantum jobs.",
       "group": "execution",
       "type": "Boolean",
       "value": "true",
-      "binding": { "type": "zeebe:input", "name": "waitForResult" }
+      "binding": { "type": "zeebe:input", "name": "waitForResult" },
+      "condition": { "property": "operationMode", "equals": "SUBMIT_JOB" }
     },
     {
       "label": "Timeout (seconds)",
@@ -190,7 +230,8 @@
       "group": "execution",
       "type": "Number",
       "value": 300,
-      "binding": { "type": "zeebe:input", "name": "timeoutSeconds" }
+      "binding": { "type": "zeebe:input", "name": "timeoutSeconds" },
+      "condition": { "property": "operationMode", "equals": "SUBMIT_JOB" }
     },
     {
       "label": "Poll Interval (seconds)",
@@ -198,7 +239,8 @@
       "group": "execution",
       "type": "Number",
       "value": 5,
-      "binding": { "type": "zeebe:input", "name": "pollIntervalSeconds" }
+      "binding": { "type": "zeebe:input", "name": "pollIntervalSeconds" },
+      "condition": { "property": "operationMode", "equals": "SUBMIT_JOB" }
     },
 
     {

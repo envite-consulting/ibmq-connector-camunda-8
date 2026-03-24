@@ -1,7 +1,10 @@
 package de.envite.connector.ibmq;
 
-import de.envite.connector.ibmq.dto.IBMQConnectorRequest;
+import de.envite.connector.ibmq.dto.IBMQBaseRequest;
+import de.envite.connector.ibmq.dto.IBMQGetJobResultRequestDto;
+import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 
+import de.envite.connector.ibmq.model.OperationMode;
 import io.camunda.connector.api.annotation.OutboundConnector;
 import io.camunda.connector.api.outbound.OutboundConnectorContext;
 import io.camunda.connector.api.outbound.OutboundConnectorFunction;
@@ -10,9 +13,11 @@ import org.springframework.stereotype.Component;
 @OutboundConnector(
         name = "IBMQ",
         inputVariables = {
+                "operationMode",
                 "apiKey",
                 "ibmqUrl",
                 "ibmqInstance",
+                "jobId",
                 "backend",
                 "programId",
                 "CircuitInputMode",
@@ -37,7 +42,10 @@ public class IBMQConnectorFunction implements OutboundConnectorFunction {
 
     @Override
     public Object execute(OutboundConnectorContext context) {
-        IBMQConnectorRequest request = context.bindVariables(IBMQConnectorRequest.class);
-        return ibmqService.executeCircuit(request);
+        OperationMode mode = context.bindVariables(IBMQBaseRequest.class).getOperationMode();
+        return switch (mode) {
+            case SUBMIT_JOB     -> ibmqService.executeCircuit(context.bindVariables(IBMQSubmitJobRequestDto.class));
+            case GET_JOB_RESULT -> ibmqService.getJobResult(context.bindVariables(IBMQGetJobResultRequestDto.class));
+        };
     }
 }

@@ -23,11 +23,13 @@ public final class IBMQConstants {
     public static final String IBM_API_VERSION        = "2024-11-30";
 
     // -------------------------------------------------------------------------
-    // API paths
+    // URL paths
     // -------------------------------------------------------------------------
 
-    public static final String PATH_JOBS    = "/v1/jobs";
-    public static final String PATH_RESULTS = "/results";
+    public static final String API_PATH_JOBS = "/v1/jobs";
+    public static final String API_PATH_RESULTS = "/results";
+    public static final String UI_PATH_INSTANCES = "/instances/";
+    public static final String UI_PATH_JOBS      = "/jobs/";
 
     // -------------------------------------------------------------------------
     // Job request fields

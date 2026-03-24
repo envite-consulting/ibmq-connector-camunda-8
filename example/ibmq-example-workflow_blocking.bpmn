@@ -10,9 +10,12 @@
              modeler:executionPlatform="Camunda Cloud"
              modeler:executionPlatformVersion="8.8.0">
 
-  <process id="ibmq-example-workflow" name="IBM Quantum Example Workflow" isExecutable="true">
+  <process id="ibmq-example-workflow-blocking" name="IBM Quantum Example Workflow (Blocking)" isExecutable="true">
 
     <extensionElements>
+      <zeebe:properties>
+        <zeebe:property name="description" value="Executes a quantum circuit synchronously using the blocking connector mode (waitForResult=true). Note: quantum jobs on real hardware backends may queue for longer than the configured timeout, causing the connector to throw a timeout exception and Camunda to re-execute the circuit from scratch. For long-running circuits, prefer the polling workflow instead." />
+      </zeebe:properties>
     </extensionElements>
 
     <startEvent id="start" name="Quantum circuit &#10;submitted">
@@ -31,8 +34,7 @@
       <extensionElements>
         <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="3" />
         <zeebe:taskHeaders>
-          <zeebe:header key="resultVariable" value="ibmqResult" />
-          <zeebe:header key="resultExpression" value="= {jobId: response.jobId, status: response.status, result: response.result}" />
+          <zeebe:header key="resultExpression" value="= {ibmqResult: {jobId: response.jobId, status: response.status, result: response.result, resultUrl: response.resultUrl}}" />
         </zeebe:taskHeaders>
       </extensionElements>
       <incoming>to-quantum</incoming>
@@ -59,7 +61,7 @@
   </process>
 
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="ibmq-example-workflow">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="ibmq-example-workflow-blocking">
 
       <bpmndi:BPMNShape id="start_di" bpmnElement="start">
         <dc:Bounds x="162" y="99" width="36" height="36" />

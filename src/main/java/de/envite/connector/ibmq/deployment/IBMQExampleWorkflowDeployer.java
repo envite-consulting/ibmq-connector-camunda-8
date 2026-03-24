@@ -1,4 +1,4 @@
-package de.envite.connector.ibmq;
+package de.envite.connector.ibmq.deployment;
 
 import io.camunda.client.CamundaClient;
 import lombok.AllArgsConstructor;
@@ -22,7 +22,8 @@ public class IBMQExampleWorkflowDeployer implements ApplicationRunner {
         camundaClient.newDeployResourceCommand()
                 .addResourceFromClasspath("example/ibmq-input-form.form")
                 .addResourceFromClasspath("example/ibmq-result-form.form")
-                .addResourceFromClasspath("example/ibmq-example-workflow.bpmn")
+                .addResourceFromClasspath("example/ibmq-example-workflow_blocking.bpmn")
+                .addResourceFromClasspath("example/ibmq-example-workflow_polling.bpmn")
                 .send()
                 .join();
         log.info("[IBMQExampleWorkflowDeployer] Example workflow deployed successfully");
