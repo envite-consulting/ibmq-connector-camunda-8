@@ -30,7 +30,7 @@ Follow the steps under [How to Run](#-how-to-run), and then import the file into
 * 📚 [Connector Documentation](#-connector-documentation)
     * [Getting Started](docs/getting-started.md)
     * [Connector Configuration and Output Reference](docs/connector-reference.md)
-    * [Use Predefined Quantum Algorithms](docs/use-predefined-algorithms.md)
+    * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md)
     * [Example Use Cases & HowTos](docs/usecases.md)
 * 🛠️ [Development & Project Setup](#-development--project-setup)
 
@@ -95,7 +95,7 @@ The full configuration and output reference can be found [here](docs/connector-r
 Learn how to effectively use the connectors in your processes:
 * [Getting Started](docs/getting-started.md): Details of how to get started with the IBM Quantum Connector
 * [Connector Configuration and Output Reference](docs/connector-reference.md): All configuration properties and the connector output fields available for use in result expressions and downstream tasks
-* [Use Predefined Quantum Algorithms](docs/use-predefined-algorithms.md): Information about how to execute predefined quantum algorithms using the IBM Quantum Connector by utilizing a circuit generating side-car.
+* [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md): Architecture and integration guide for using a Qiskit sidecar to generate quantum circuits from classical problem inputs and post-process measurement results — including support for variational algorithms (VQE, QAOA) with classical optimizer loops.
 * [Example Use Cases & HowTos](docs/usecases.md): TODO
 
 ## 🛠️ Development & Project Setup
