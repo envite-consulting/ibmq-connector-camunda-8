@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+             xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://bpmn.io/schema/bpmn"
+             modeler:executionPlatform="Camunda Cloud"
+             modeler:executionPlatformVersion="8.8.0">
+
+  <!--
+    Grover's Search – IBM Quantum Algorithm Accelerator Blueprint
+    ─────────────────────────────────────────────────────────────
+    Demonstrates the sidecar pattern documented in docs/use-predefined-algorithms.md.
+    The IBM Quantum Connector is used unchanged for Submit/Poll. A lightweight sidecar
+    handles circuit generation (POST /generate-circuit) and classical post-processing
+    (POST /process-results). The connector and the sidecar are independent components.
+
+    Expected process variables at start (via grover-input-form or Camunda secrets):
+      problem        – object: { "target": "11", "n_qubits": 2, "shots": 1024 }
+      sidecarUrl     – string: base URL of the quantum algorithm sidecar, e.g. http://quantum-sidecar:5000
+      apiKey         – string: IBM Quantum API key (use secret: {{secrets.IBMQ_API_KEY}})
+      ibmqUrl        – string: https://quantum.cloud.ibm.com/api
+      ibmqInstance   – string: IBM Quantum instance CRN
+      backend        – string: ibmq_qasm_simulator | ibm_brisbane | ...
+  -->
+
+  <process id="grover-search-workflow" name="Grover&#x2019;s Search &#x2013; IBM Quantum Blueprint" isExecutable="true">
+
+    <extensionElements>
+      <zeebe:properties>
+        <zeebe:property name="description" value="Blueprint for Grover&#x27;s search using the IBM Quantum Algorithm Accelerator pattern. A sidecar generates the circuit from classical problem parameters; the IBM Quantum Connector submits and polls the job unchanged; the sidecar post-processes raw results into a classical answer." />
+      </zeebe:properties>
+    </extensionElements>
+
+    <!-- ── 0. Start ─────────────────────────────────────────────────────── -->
+
+    <startEvent id="start" name="Search&#10;problem submitted">
+      <extensionElements>
+        <zeebe:formDefinition formId="grover-input-form" />
+      </extensionElements>
+      <outgoing>to-generate</outgoing>
+    </startEvent>
+
+    <sequenceFlow id="to-generate" sourceRef="start" targetRef="generate-circuit" />
+
+    <!-- ── 1. Generate Grover circuit via sidecar ────────────────────────
+         Uses the "IBM Quantum: Generate Circuit" element template
+         (element-templates/ibmq-sidecar-generate-circuit.json).
+         Result expression maps sidecar response to circuit + shots process variables.
+    -->
+
+    <serviceTask id="generate-circuit" name="Generate&#10;Grover Circuit"
+                 zeebe:modelerTemplate="de.envite.ibmq-sidecar.generate-circuit"
+                 zeebe:modelerTemplateVersion="1">
+      <extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="generateCircuitResult" />
+          <zeebe:header key="resultExpression" value="= {circuit: response.body.circuit, shots: response.body.shots}" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:input source="= sidecarUrl + &quot;/generate-circuit&quot;" target="url" />
+          <zeebe:input source="= &quot;POST&quot;" target="method" />
+          <zeebe:input source="= {&quot;Content-Type&quot;: &quot;application/json&quot;}" target="headers" />
+          <zeebe:input source="= {algorithm: &quot;grover&quot;, problem: problem}" target="body" />
+        </zeebe:ioMapping>
+      </extensionElements>
+      <incoming>to-generate</incoming>
+      <outgoing>to-submit</outgoing>
+    </serviceTask>
+
+    <sequenceFlow id="to-submit" sourceRef="generate-circuit" targetRef="submit-job" />
+
+    <!-- ── 2. Submit quantum circuit ─────────────────────────────────────
+         Standard IBM Quantum Connector (SUBMIT_JOB, waitForResult=false).
+         circuit and shots come from the generate-circuit result expression above.
+    -->
+
+    <serviceTask id="submit-job" name="Submit&#10;quantum circuit"
+                 zeebe:modelerTemplate="de.envite.ibmq-connector"
+                 zeebe:modelerTemplateVersion="1"
+                 zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMiAyMiIgd2lkdGg9IjIyIiBoZWlnaHQ9IjIyIj4KICA8Y2lyY2xlIGN4PSIxMSIgY3k9IjExIiByPSIyLjIiIGZpbGw9IiMwMDQzQ0UiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiIHRyYW5zZm9ybT0icm90YXRlKDYwIDExIDExKSIvPgogIDxlbGxpcHNlIGN4PSIxMSIgY3k9IjExIiByeD0iOSIgcnk9IjMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDA0M0NFIiBzdHJva2Utd2lkdGg9IjEuMiIgdHJhbnNmb3JtPSJyb3RhdGUoMTIwIDExIDExKSIvPgo8L3N2Zz4K">
+      <extensionElements>
+        <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="ibmqSubmitResult" />
+          <zeebe:header key="resultExpression" value="= {ibmqJobId: response.jobId}" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:input source="= &quot;SUBMIT_JOB&quot;" target="operationMode" />
+          <zeebe:input source="= false" target="waitForResult" />
+          <zeebe:input source="= apiKey" target="apiKey" />
+          <zeebe:input source="= ibmqUrl" target="ibmqUrl" />
+          <zeebe:input source="= ibmqInstance" target="ibmqInstance" />
+          <zeebe:input source="= backend" target="backend" />
+          <zeebe:input source="= &quot;sampler&quot;" target="programId" />
+          <zeebe:input source="= &quot;OPEN_QASM&quot;" target="CircuitInputMode" />
+          <zeebe:input source="= circuit" target="circuit" />
+          <zeebe:input source="= shots" target="shots" />
+        </zeebe:ioMapping>
+      </extensionElements>
+      <incoming>to-submit</incoming>
+      <outgoing>to-timer</outgoing>
+    </serviceTask>
+
+    <sequenceFlow id="to-timer" sourceRef="submit-job" targetRef="poll-timer" />
+
+    <!-- ── 3. Poll timer ──────────────────────────────────────────────── -->
+
+    <intermediateCatchEvent id="poll-timer" name="Wait 30s">
+      <incoming>to-timer</incoming>
+      <incoming>to-timer-loop</incoming>
+      <outgoing>to-check</outgoing>
+      <timerEventDefinition id="poll-timer-def">
+        <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
+      </timerEventDefinition>
+    </intermediateCatchEvent>
+
+    <sequenceFlow id="to-check" sourceRef="poll-timer" targetRef="check-job" />
+
+    <!-- ── 4. Check job result ────────────────────────────────────────── -->
+
+    <serviceTask id="check-job" name="Check job&#10;result"
+                 zeebe:modelerTemplate="de.envite.ibmq-connector"
+                 zeebe:modelerTemplateVersion="1"
+                 zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMiAyMiIgd2lkdGg9IjIyIiBoZWlnaHQ9IjIyIj4KICA8Y2lyY2xlIGN4PSIxMSIgY3k9IjExIiByPSIyLjIiIGZpbGw9IiMwMDQzQ0UiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KICA8ZWxsaXBzZSBjeD0iMTEiIGN5PSIxMSIgcng9IjkiIHJ5PSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNDNDRSIgc3Ryb2tlLXdpZHRoPSIxLjIiIHRyYW5zZm9ybT0icm90YXRlKDYwIDExIDExKSIvPgogIDxlbGxpcHNlIGN4PSIxMSIgY3k9IjExIiByeD0iOSIgcnk9IjMuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDA0M0NFIiBzdHJva2Utd2lkdGg9IjEuMiIgdHJhbnNmb3JtPSJyb3RhdGUoMTIwIDExIDExKSIvPgo8L3N2Zz4K">
+      <extensionElements>
+        <zeebe:taskDefinition type="de.envite:ibmq-connector:1" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="ibmqCheckResult" />
+          <zeebe:header key="resultExpression" value="= {ibmqStatus: response.status, ibmqResult: {jobId: response.jobId, status: response.status, result: response.result, resultUrl: response.resultUrl}}" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:input source="= &quot;GET_JOB_RESULT&quot;" target="operationMode" />
+          <zeebe:input source="= apiKey" target="apiKey" />
+          <zeebe:input source="= ibmqUrl" target="ibmqUrl" />
+          <zeebe:input source="= ibmqInstance" target="ibmqInstance" />
+          <zeebe:input source="= ibmqJobId" target="jobId" />
+        </zeebe:ioMapping>
+      </extensionElements>
+      <incoming>to-check</incoming>
+      <outgoing>to-gateway</outgoing>
+    </serviceTask>
+
+    <sequenceFlow id="to-gateway" sourceRef="check-job" targetRef="status-gateway" />
+
+    <!-- ── 5. Status gateway ──────────────────────────────────────────── -->
+
+    <exclusiveGateway id="status-gateway" name="Job&#10;terminated?" default="to-timer-loop">
+      <incoming>to-gateway</incoming>
+      <outgoing>to-timer-loop</outgoing>
+      <outgoing>to-process-results</outgoing>
+    </exclusiveGateway>
+
+    <sequenceFlow id="to-timer-loop" name="No" sourceRef="status-gateway" targetRef="poll-timer" />
+
+    <sequenceFlow id="to-process-results" name="Yes" sourceRef="status-gateway" targetRef="process-results">
+      <conditionExpression xsi:type="tFormalExpression">= ibmqStatus in ["COMPLETED","FAILED","CANCELLED","ERROR"]</conditionExpression>
+    </sequenceFlow>
+
+    <!-- ── 6. Post-process quantum results via sidecar ───────────────────
+         Uses the "IBM Quantum: Process Results" element template
+         (element-templates/ibmq-sidecar-process-results.json).
+         Passes the raw ibmqResult.result payload back to the sidecar.
+         Result expression maps the sidecar answer to classicalResult.
+    -->
+
+    <serviceTask id="process-results" name="Process&#10;quantum results"
+                 zeebe:modelerTemplate="de.envite.ibmq-sidecar.process-results"
+                 zeebe:modelerTemplateVersion="1">
+      <extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="processResultsOutput" />
+          <zeebe:header key="resultExpression" value="= {classicalResult: response.body}" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:input source="= sidecarUrl + &quot;/process-results&quot;" target="url" />
+          <zeebe:input source="= &quot;POST&quot;" target="method" />
+          <zeebe:input source="= {&quot;Content-Type&quot;: &quot;application/json&quot;}" target="headers" />
+          <zeebe:input source="= {algorithm: &quot;grover&quot;, problem: problem, results: ibmqResult.result}" target="body" />
+        </zeebe:ioMapping>
+      </extensionElements>
+      <incoming>to-process-results</incoming>
+      <outgoing>to-review</outgoing>
+    </serviceTask>
+
+    <sequenceFlow id="to-review" sourceRef="process-results" targetRef="review" />
+
+    <!-- ── 7. Human review ───────────────────────────────────────────── -->
+
+    <userTask id="review" name="Review&#10;search result">
+      <extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="grover-result-form" />
+      </extensionElements>
+      <incoming>to-review</incoming>
+      <outgoing>to-end</outgoing>
+    </userTask>
+
+    <sequenceFlow id="to-end" sourceRef="review" targetRef="end" />
+
+    <endEvent id="end" name="Search&#10;complete">
+      <incoming>to-end</incoming>
+    </endEvent>
+
+  </process>
+
+  <!-- ── BPMN Diagram Interchange ─────────────────────────────────────── -->
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="grover-search-workflow">
+
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="144" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="120" y="142" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="generate-circuit_di" bpmnElement="generate-circuit">
+        <dc:Bounds x="250" y="77" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="submit-job_di" bpmnElement="submit-job">
+        <dc:Bounds x="420" y="77" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="poll-timer_di" bpmnElement="poll-timer">
+        <dc:Bounds x="592" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="584" y="142" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="check-job_di" bpmnElement="check-job">
+        <dc:Bounds x="690" y="77" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="status-gateway_di" bpmnElement="status-gateway" isMarkerVisible="true">
+        <dc:Bounds x="865" y="92" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="852" y="149" width="76" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="process-results_di" bpmnElement="process-results">
+        <dc:Bounds x="990" y="77" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="review_di" bpmnElement="review">
+        <dc:Bounds x="1160" y="77" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+        <dc:Bounds x="1332" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1314" y="142" width="72" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="to-generate_di" bpmnElement="to-generate">
+        <di:waypoint x="180" y="117" />
+        <di:waypoint x="250" y="117" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-submit_di" bpmnElement="to-submit">
+        <di:waypoint x="350" y="117" />
+        <di:waypoint x="420" y="117" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-timer_di" bpmnElement="to-timer">
+        <di:waypoint x="520" y="117" />
+        <di:waypoint x="592" y="117" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-check_di" bpmnElement="to-check">
+        <di:waypoint x="628" y="117" />
+        <di:waypoint x="690" y="117" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-gateway_di" bpmnElement="to-gateway">
+        <di:waypoint x="790" y="117" />
+        <di:waypoint x="865" y="117" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-timer-loop_di" bpmnElement="to-timer-loop">
+        <di:waypoint x="890" y="92" />
+        <di:waypoint x="890" y="40" />
+        <di:waypoint x="610" y="40" />
+        <di:waypoint x="610" y="99" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="741" y="22" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-process-results_di" bpmnElement="to-process-results">
+        <di:waypoint x="915" y="117" />
+        <di:waypoint x="990" y="117" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="938" y="99" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-review_di" bpmnElement="to-review">
+        <di:waypoint x="1090" y="117" />
+        <di:waypoint x="1160" y="117" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-end_di" bpmnElement="to-end">
+        <di:waypoint x="1260" y="117" />
+        <di:waypoint x="1332" y="117" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</definitions>
