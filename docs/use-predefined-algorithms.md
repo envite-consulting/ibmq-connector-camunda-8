@@ -1,6 +1,6 @@
 # Using Predefined Quantum Algorithms via a Sidecar
 
-Modelling a quantum circuit by hand in OpenQASM is impractical for most real-world algorithms. 
+Modelling a quantum circuit by hand using OpenQASM is impractical for most real-world algorithms. 
 Instead, a **quantum circuit generation sidecar** — a lightweight Python/Qiskit service deployed alongside the connector — translates classical problem inputs into executable quantum circuits and interprets raw measurement results back into classical answers.
 
 This document describes the architecture, the sidecar API contract, how classical post-processing fits in, and how to wire everything together in a BPMN workflow.
@@ -25,7 +25,8 @@ Start Form (problem params)
 User Task / End
 ```
 
-The IBM Quantum Connector is unchanged. The sidecar owns all algorithm logic — the BPMN workflow only orchestrates data flow between the three steps.
+The IBM Quantum Connector is unchanged and the sidecar owns all algorithm logic.
+The BPMN workflow only orchestrates data flow between the three steps.
 
 The sidecar is a separate Docker container deployed alongside the connector, reachable at `http://localhost:<port>` or by service name in Kubernetes/Compose.
 
@@ -110,7 +111,8 @@ Start → Generate Circuit → Submit Job → [Poll Loop] → Process Results �
 
 ### Variational algorithms (VQE, QAOA)
 
-Variational algorithms iterate between a quantum circuit execution and a classical optimizer that adjusts the circuit parameters until convergence. This requires a third sidecar endpoint and an additional loop in the BPMN:
+Variational algorithms iterate between a quantum circuit execution and a classical optimizer that adjusts the circuit parameters until convergence. 
+This requires a third sidecar endpoint and an additional loop in the  workflow:
 
 ```
 Start
@@ -119,7 +121,7 @@ Start
 Generate Circuit (initial params)
   │
   ▼
-Submit Job → [Poll Loop] ──────────────────────────────────┐
+Submit Job → [Poll Loop]  ──────────────────────────────────┐
   │                                                         │
   ▼                                                         │
 Optimize (classical)                                        │
@@ -166,7 +168,7 @@ The BPMN gateway after the optimize task routes on `converged`:
 - `= converged = false` → loop back to Generate Circuit, passing `next_params` as the new circuit parameters
 - `= converged = true` → proceed to Process Final Result
 
-The sidecar manages optimizer state statelessly — the workflow passes the full current state (parameters, iteration count, previous results) on every call, so no server-side session is needed.
+The sidecar works statelessly — the workflow passes the full current state (parameters, iteration count, previous results) on every call, so no server-side session is needed.
 
 ---
 
@@ -181,13 +183,15 @@ The sidecar manages optimizer state statelessly — the workflow passes the full
 | Sampler (generic) | Bitstring count distribution | Algorithm-specific interpretation |
 | Estimator (generic) | Observable expectation values | Algorithm-specific interpretation |
 
-All post-processing is encapsulated in the sidecar's `/process-results` endpoint. The BPMN workflow only receives the final `classicalResult`.
+All post-processing is encapsulated in the sidecar's `/process-results` endpoint. 
+The BPMN workflow only receives the final `classicalResult`.
 
 ---
 
 ## Deployment
 
-The sidecar runs as a Docker container alongside the IBM Quantum Connector. A minimal `docker-compose.yml` would look like:
+The sidecar runs as a Docker container alongside the IBM Quantum Connector. 
+A minimal `docker-compose.yml` would look like:
 
 ```yaml
 services:
@@ -201,7 +205,8 @@ services:
       - "5000:5000"
 ```
 
-The connector reaches the sidecar at `http://quantum-sidecar:5000` via the Camunda HTTP Connector service tasks. The sidecar URL should be stored as a Camunda secret or process variable to keep it configurable across environments.
+The connector reaches the sidecar at `http://quantum-sidecar:5000` via the Camunda HTTP Connector service tasks. 
+The sidecar URL should be stored as a Camunda secret or process variable to keep it configurable across environments.
 
 ---
 
@@ -219,10 +224,11 @@ An alternative design would be to integrate the sidecar calls directly as additi
 
 The sidecar integration is published as two separate but related Camunda marketplace listings:
 
-**1. IBM Quantum Connector** *(existing)*
-The connector JAR and its element template. No sidecar dependency. Installable standalone and usable immediately with manually authored circuits.
+**1. IBM Quantum Connector** *(existing)*:
+The connector JAR and its element template. No sidecar dependency. 
+Installable standalone and usable immediately with manually created quantum circuits.
 
-**2. IBM Quantum Algorithm Accelerator** *(planned)*
+**2. IBM Quantum Algorithm Accelerator** *(planned)*:
 A marketplace accelerator listing that bundles:
 - Element templates for the sidecar HTTP service tasks (`/generate-circuit`, `/process-results`, `/optimize`), giving modelers the same pre-configured, discoverable experience as a native connector
 - Pre-wired BPMN templates for one-shot and variational algorithm workflows
