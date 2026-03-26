@@ -1,0 +1,43 @@
+{
+  "id": "grover-result-form",
+  "type": "default",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textfield",
+      "key": "classicalResult.answer",
+      "label": "Answer",
+      "description": "Bitstring with the highest measurement frequency.",
+      "readonly": true
+    },
+    {
+      "type": "textfield",
+      "key": "classicalResult.target",
+      "label": "Target",
+      "readonly": true
+    },
+    {
+      "type": "checkbox",
+      "key": "classicalResult.found",
+      "label": "Found",
+      "description": "Whether the answer matches the target bitstring.",
+      "readonly": true
+    },
+    {
+      "type": "number",
+      "key": "classicalResult.confidence",
+      "label": "Confidence",
+      "description": "Fraction of shots that returned the answer bitstring.",
+      "readonly": true
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqResult.resultUrl",
+      "label": "IBM Quantum Job URL",
+      "readonly": true
+    }
+  ]
+}

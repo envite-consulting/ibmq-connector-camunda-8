@@ -20,10 +20,10 @@ public class IBMQExampleWorkflowDeployer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         log.info("[IBMQExampleWorkflowDeployer] Deploying example workflow and forms");
         camundaClient.newDeployResourceCommand()
-                .addResourceFromClasspath("example/ibmq-input-form.form")
-                .addResourceFromClasspath("example/ibmq-result-form.form")
-                .addResourceFromClasspath("example/ibmq-example-workflow_blocking.bpmn")
-                .addResourceFromClasspath("example/ibmq-example-workflow_polling.bpmn")
+                .addResourceFromClasspath("example/getting-started/ibmq-input-form.form")
+                .addResourceFromClasspath("example/getting-started/ibmq-result-form.form")
+                .addResourceFromClasspath("example/getting-started/ibmq-example-workflow_blocking.bpmn")
+                .addResourceFromClasspath("example/getting-started/ibmq-example-workflow_polling.bpmn")
                 .send()
                 .join();
         log.info("[IBMQExampleWorkflowDeployer] Example workflow deployed successfully");

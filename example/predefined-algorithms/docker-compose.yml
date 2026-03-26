@@ -1,0 +1,26 @@
+services:
+
+  # IBM Quantum Connector – Spring Boot app connecting to Camunda SaaS
+  # Credentials are read from src/main/resources/application.properties at runtime.
+  ibmq-connector:
+    build: ../..
+    volumes:
+      - ../../src/main/resources/application.properties:/app/config/application.properties:ro
+    environment:
+      SPRING_CONFIG_LOCATION: "file:/app/config/,classpath:/"
+    depends_on:
+      quantum-sidecar:
+        condition: service_healthy
+    restart: on-failure
+
+  # Quantum Algorithm Sidecar – Flask service for circuit generation and result processing
+  quantum-sidecar:
+    build: ./sidecar
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
