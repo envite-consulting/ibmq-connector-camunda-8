@@ -237,3 +237,12 @@ A marketplace accelerator listing that bundles:
 The accelerator listing explicitly declares the IBM Quantum Connector as a prerequisite, so users understand the dependency relationship before installing.
 
 This split maps naturally to what the Camunda marketplace already supports: connector listings for runtime components and accelerator/template listings for workflow patterns and tooling.
+
+---
+
+## Examples
+
+Concrete end-to-end workflow examples using this pattern are documented in [Example Use Cases & HowTos](usecases.md):
+
+- [Grover's Search](usecases.md#grovers-search) — one-shot algorithm
+- [QAOA / Max-Cut](usecases.md#qaoa--max-cut) — variational algorithm with SPSA optimization loop
