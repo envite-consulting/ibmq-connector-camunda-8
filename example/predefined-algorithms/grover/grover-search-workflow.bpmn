@@ -77,7 +77,7 @@
 
     <boundaryEvent id="generate-circuit-error" name="Sidecar&#10;error" attachedToRef="generate-circuit" cancelActivity="true">
       <outgoing>to-sidecar-error-from-generate</outgoing>
-      <errorEventDefinition id="generate-circuit-error-def" errorRef="sidecar-error" zeebe:errorMessageVariable="sidecarErrorMessage" />
+      <errorEventDefinition id="generate-circuit-error-def" errorRef="sidecar-error" />
     </boundaryEvent>
 
     <sequenceFlow id="to-sidecar-error-from-generate" sourceRef="generate-circuit-error" targetRef="sidecar-error-gateway" />
@@ -206,7 +206,7 @@
 
     <boundaryEvent id="process-results-error" name="Sidecar&#10;error" attachedToRef="process-results" cancelActivity="true">
       <outgoing>to-sidecar-error-from-process</outgoing>
-      <errorEventDefinition id="process-results-error-def" errorRef="sidecar-error" zeebe:errorMessageVariable="sidecarErrorMessage" />
+      <errorEventDefinition id="process-results-error-def" errorRef="sidecar-error" />
     </boundaryEvent>
 
     <sequenceFlow id="to-sidecar-error-from-process" sourceRef="process-results-error" targetRef="sidecar-error-gateway" />

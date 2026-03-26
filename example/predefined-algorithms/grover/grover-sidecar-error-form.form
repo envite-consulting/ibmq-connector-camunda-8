@@ -7,14 +7,7 @@
       "type": "textfield",
       "key": "sidecarUrl",
       "label": "Sidecar URL",
-      "description": "The URL that was called. Check that the sidecar is running and reachable at this address.",
-      "readonly": true
-    },
-    {
-      "type": "textfield",
-      "key": "sidecarErrorMessage",
-      "label": "Error details",
-      "description": "HTTP status and error message, if available.",
+      "description": "The URL that was called. Verify the sidecar is running and reachable at this address.",
       "readonly": true
     }
   ]
