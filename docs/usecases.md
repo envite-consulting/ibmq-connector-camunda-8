@@ -23,6 +23,8 @@ Given a target bitstring (e.g. `"11"`), find it in the search space of all 2-qub
 
 ### Workflow structure
 
+![Grover's Search workflow](images/grover-workflow.png)
+
 ```
 Start Form → Generate Circuit → Submit Job → [Poll Loop] → Process Results → Review → End
 ```
