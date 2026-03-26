@@ -110,6 +110,8 @@ Given an undirected weighted graph (adjacency matrix), find the node partition t
 
 ### Workflow structure
 
+![QAOA MaxCut workflow](images/qaoa-max-cut-workflow.png)
+
 ```
 Start Form → Generate Circuit → Submit Job → [Poll Loop] → Evaluate Results → SPSA Optimize
                 ▲                                                                    │
