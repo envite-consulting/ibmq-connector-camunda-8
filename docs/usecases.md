@@ -12,7 +12,7 @@ Each example includes a ready-to-run BPMN workflow, element templates, and setup
 
 ## Grover's Search
 
-**Example workflow:** [`example/predefined-algorithms/grover-search-workflow.bpmn`](../example/predefined-algorithms/grover-search-workflow.bpmn)
+**Example workflow:** [`example/predefined-algorithms/grover/grover-search-workflow.bpmn`](../example/predefined-algorithms/grover/grover-search-workflow.bpmn)
 
 Grover's search algorithm finds a marked element in an unstructured search space of size N with O(√N) quantum circuit evaluations, compared to O(N) for a classical linear scan.
 This example demonstrates the [IBM Quantum Algorithm Accelerator pattern](use-predefined-algorithms.md): a lightweight Python sidecar translates a classical problem description into an executable quantum circuit and interprets the raw measurement results back into a classical answer — the IBM Quantum Connector itself is unchanged.

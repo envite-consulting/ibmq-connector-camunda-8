@@ -1,0 +1,64 @@
+{
+  "id": "grover-input-form",
+  "type": "default",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textfield",
+      "key": "problem.target",
+      "label": "Target Bitstring",
+      "description": "Bitstring to search for, e.g. \"11\" searches a 2-qubit space, \"101\" a 3-qubit space.",
+      "defaultValue": "11",
+      "validate": { "required": true }
+    },
+    {
+      "type": "number",
+      "key": "problem.shots",
+      "label": "Shots",
+      "description": "Number of circuit repetitions.",
+      "defaultValue": 1024
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "textfield",
+      "key": "sidecarUrl",
+      "label": "Sidecar URL",
+      "description": "Base URL of the quantum algorithm sidecar. Use the Docker service name when running via docker compose.",
+      "defaultValue": "http://quantum-sidecar:5000",
+      "validate": { "required": true }
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "textfield",
+      "key": "apiKey",
+      "label": "IBM Quantum API Key",
+      "description": "Use a Camunda secret: {{secrets.IBMQ_API_KEY}}",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqUrl",
+      "label": "IBMQ URL",
+      "defaultValue": "https://quantum.cloud.ibm.com/api"
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqInstance",
+      "label": "IBMQ Instance CRN",
+      "description": "Cloud Resource Name (CRN). Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textfield",
+      "key": "backend",
+      "label": "Backend",
+      "description": "Name of the quantum backend to use, e.g. ibm_brisbane. Retrieve from the IBM Quantum UI or run GET /v1/backends with your CRN to list available backends.",
+      "defaultValue": "",
+      "validate": { "required": true }
+    }
+  ]
+}
