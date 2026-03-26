@@ -5,16 +5,16 @@
   "components": [
     {
       "type": "textfield",
-      "key": "sidecarError.code",
-      "label": "Error Code",
-      "description": "HTTP status code or connector error code returned by the sidecar.",
+      "key": "sidecarUrl",
+      "label": "Sidecar URL",
+      "description": "The URL that was called. Check that the sidecar is running and reachable at this address.",
       "readonly": true
     },
     {
-      "type": "textarea",
-      "key": "sidecarError.message",
-      "label": "Error Message",
-      "description": "Full error message returned by the sidecar.",
+      "type": "textfield",
+      "key": "sidecarErrorMessage",
+      "label": "Error details",
+      "description": "HTTP status and error message, if available.",
       "readonly": true
     }
   ]

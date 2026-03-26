@@ -62,7 +62,7 @@
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="generateCircuitResult" />
           <zeebe:header key="resultExpression" value="= {circuit: response.body.circuit, shots: response.body.shots}" />
-          <zeebe:header key="errorExpression" value="= if error.code != null then bpmnError(&quot;SIDECAR_ERROR&quot;, error.message, {sidecarError: {code: error.code, message: error.message}}) else null" />
+          <zeebe:header key="errorExpression" value="= bpmnError(&quot;SIDECAR_ERROR&quot;, (if error.code != null then string(error.code) else &quot;UNREACHABLE&quot;) + &quot; – &quot; + (if error.message != null then error.message else &quot;Could not reach sidecar&quot;))" />
         </zeebe:taskHeaders>
         <zeebe:ioMapping>
           <zeebe:input source="= sidecarUrl + &quot;/generate-circuit&quot;" target="url" />
@@ -77,7 +77,7 @@
 
     <boundaryEvent id="generate-circuit-error" name="Sidecar&#10;error" attachedToRef="generate-circuit" cancelActivity="true">
       <outgoing>to-sidecar-error-from-generate</outgoing>
-      <errorEventDefinition id="generate-circuit-error-def" errorRef="sidecar-error" />
+      <errorEventDefinition id="generate-circuit-error-def" errorRef="sidecar-error" zeebe:errorMessageVariable="sidecarErrorMessage" />
     </boundaryEvent>
 
     <sequenceFlow id="to-sidecar-error-from-generate" sourceRef="generate-circuit-error" targetRef="sidecar-error-gateway" />
@@ -191,7 +191,7 @@
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="processResultsOutput" />
           <zeebe:header key="resultExpression" value="= {classicalResult: response.body}" />
-          <zeebe:header key="errorExpression" value="= if error.code != null then bpmnError(&quot;SIDECAR_ERROR&quot;, error.message, {sidecarError: {code: error.code, message: error.message}}) else null" />
+          <zeebe:header key="errorExpression" value="= bpmnError(&quot;SIDECAR_ERROR&quot;, (if error.code != null then string(error.code) else &quot;UNREACHABLE&quot;) + &quot; – &quot; + (if error.message != null then error.message else &quot;Could not reach sidecar&quot;))" />
         </zeebe:taskHeaders>
         <zeebe:ioMapping>
           <zeebe:input source="= sidecarUrl + &quot;/process-results&quot;" target="url" />
@@ -206,7 +206,7 @@
 
     <boundaryEvent id="process-results-error" name="Sidecar&#10;error" attachedToRef="process-results" cancelActivity="true">
       <outgoing>to-sidecar-error-from-process</outgoing>
-      <errorEventDefinition id="process-results-error-def" errorRef="sidecar-error" />
+      <errorEventDefinition id="process-results-error-def" errorRef="sidecar-error" zeebe:errorMessageVariable="sidecarErrorMessage" />
     </boundaryEvent>
 
     <sequenceFlow id="to-sidecar-error-from-process" sourceRef="process-results-error" targetRef="sidecar-error-gateway" />
