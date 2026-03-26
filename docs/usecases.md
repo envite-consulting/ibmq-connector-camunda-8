@@ -170,11 +170,12 @@ The `optimizer_state` blob returned by each `/optimize` call is passed back unch
 
 > **Warning (Camunda SaaS only):** The sidecar must be publicly accessible when using Camunda SaaS. See the [Grover example](#running-the-example) for details on using ngrok during testing.
 
-1. Start the connector and sidecar:
+1. Start the connector, sidecar, and QAOA backend services:
    ```bash
    cd example/predefined-algorithms
-   docker compose up --build
+   docker compose --profile qaoa up --build
    ```
+   The `--profile qaoa` flag additionally starts the [`quantum-circuit-generator`](https://github.com/UST-QuAntiL/quantum-circuit-generator) (port 5073) and [`objective-evaluation-service`](https://github.com/UST-QuAntiL/objective-evaluation-service) (port 5072) containers, which the sidecar delegates QAOA circuit generation and objective evaluation to. These services are not needed for the Grover example.
 
 2. Deploy the workflow and forms to your Camunda cluster by uploading the files from `example/predefined-algorithms/qaoa/` via the Camunda Web Modeler.
 
