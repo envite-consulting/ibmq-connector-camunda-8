@@ -296,4 +296,4 @@ Only the error payload is inaccessible.
 Concrete end-to-end workflow examples using this pattern are documented in [Example Use Cases & HowTos](usecases.md):
 
 - [Grover's Search](usecases.md#grovers-search) — one-shot algorithm
-- [QAOA / Max-Cut](usecases.md#qaoa--max-cut) — variational algorithm with SPSA optimization loop
+- [QAOA / MaxCut](usecases.md#qaoa--max-cut) — variational algorithm with SPSA optimization loop
