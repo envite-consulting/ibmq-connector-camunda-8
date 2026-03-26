@@ -1,0 +1,21 @@
+{
+  "id": "grover-sidecar-error-form",
+  "type": "default",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textfield",
+      "key": "sidecarError.code",
+      "label": "Error Code",
+      "description": "HTTP status code or connector error code returned by the sidecar.",
+      "readonly": true
+    },
+    {
+      "type": "textarea",
+      "key": "sidecarError.message",
+      "label": "Error Message",
+      "description": "Full error message returned by the sidecar.",
+      "readonly": true
+    }
+  ]
+}
