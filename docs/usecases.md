@@ -3,11 +3,10 @@
 The following examples demonstrate how to use the IBM Quantum Connector and the [IBM Quantum Algorithm Accelerator pattern](use-predefined-algorithms.md) in real workflows.
 Each example includes a ready-to-run BPMN workflow, element templates, and setup instructions.
 
-| Example | Algorithm type | Pattern |
-|---|---|---|
-| [Grover's Search](#grovers-search) | One-shot | Algorithm Accelerator (sidecar) |
-
-TODO: extend table as more examples are added
+| Example | Algorithm type | Reference                                               |
+|---|---|---------------------------------------------------------|
+| [Grover's Search](#grovers-search) | One-shot | [Grover, 1996](https://arxiv.org/abs/quant-ph/9605043)  |
+| [QAOA / Max-Cut](#qaoa--max-cut) | Variational | [Farhi et al., 2014](https://arxiv.org/abs/1411.4028)   |
 
 ---
 
@@ -80,4 +79,8 @@ Start Form → Generate Circuit → Submit Job → [Poll Loop] → Process Resul
 
 ---
 
-TODO: Add QAOA / Max-Cut example
+---
+
+## QAOA / Max-Cut
+
+TODO
