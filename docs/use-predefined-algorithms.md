@@ -10,6 +10,7 @@
   - [Variational algorithms](#variational-algorithms-vqe-qaoa)
 - [Post-Processing by Algorithm Type](#post-processing-by-algorithm-type)
 - [Deploying the Sidecar](#deploying-the-sidecar)
+- [Known Limitations](#known-limitations)
 - [Camunda Marketplace Publication Strategy](#camunda-marketplace-publication-strategy)
   - [Why the sidecar operations are not part of the IBM Quantum Connector](#why-the-sidecar-operations-are-not-part-of-the-ibm-quantum-connector)
   - [Two-listing publication strategy](#two-listing-publication-strategy)
@@ -272,6 +273,21 @@ A marketplace accelerator listing that bundles:
 The accelerator listing explicitly declares the IBM Quantum Connector as a prerequisite, so users understand the dependency relationship before installing.
 
 This split maps naturally to what the Camunda marketplace already supports: connector listings for runtime components and accelerator/template listings for workflow patterns and tooling.
+
+---
+
+## Known Limitations
+
+### Sidecar error details on Camunda SaaS
+
+When a sidecar HTTP service task fails and an error boundary event catches the `SIDECAR_ERROR`, the caught error's code and message are **not accessible as process variables** on Camunda SaaS (tested on 8.8).
+
+The boundary event itself fires correctly and routing works as expected.
+Only the error payload is inaccessible.
+
+**Workaround:** The `sidecarUrl` process variable (set at start) is always available at the review user task and is the most actionable debugging information for connectivity errors. For sidecar-side failures (e.g. HTTP 500), consult the sidecar container logs directly.
+
+**Self-hosted Zeebe:** `zeebe:errorMessageVariable` is confirmed working from Camunda 8.4 onward on self-hosted deployments. Error details will populate automatically without any BPMN changes.
 
 ---
 
