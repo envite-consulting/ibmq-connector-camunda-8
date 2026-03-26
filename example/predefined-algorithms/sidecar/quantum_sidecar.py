@@ -405,12 +405,17 @@ def _extract_counts(results: object) -> dict[str, int]:
             {
               "data": {
                 "c": {
-                  "array": [[0, 1], [1, 1], ...]   # one bit-vector per shot, LSB first
+                  "samples": ["0x3", "0x1", ...],  # one hex integer per shot
+                  "num_bits": 2
                 }
               }
             }
           ]
         }
+
+    The "samples" format is used by the current IBM Quantum REST API (Sampler v2) for all
+    backends. The legacy "array" format (bit-vectors, LSB first) is retained for backwards
+    compatibility with older API versions.
 
     Adapt this function if your connector serialises the payload differently.
     """
@@ -425,9 +430,15 @@ def _extract_counts(results: object) -> dict[str, int]:
         for pub in pub_results:
             data = pub.get("data", {}) if isinstance(pub, dict) else {}
             for creg in data.values():
-                for outcome in creg.get("array", []):
-                    key = "".join(str(b) for b in reversed(outcome))
-                    counts[key] = counts.get(key, 0) + 1
+                if "samples" in creg:
+                    num_bits = int(creg.get("num_bits", 1))
+                    for sample in creg["samples"]:
+                        key = format(int(sample, 16), f"0{num_bits}b")
+                        counts[key] = counts.get(key, 0) + 1
+                else:
+                    for outcome in creg.get("array", []):
+                        key = "".join(str(b) for b in reversed(outcome))
+                        counts[key] = counts.get(key, 0) + 1
     except (AttributeError, TypeError, KeyError):
         pass
     return counts

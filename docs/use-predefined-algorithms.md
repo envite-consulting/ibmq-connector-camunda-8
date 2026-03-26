@@ -93,7 +93,24 @@ Applies classical post-processing to the raw quantum measurement data and return
 }
 ```
 
-The `results` field contains `ibmqResult.result` as returned by the connector — the raw Qiskit Runtime result payload.
+The `results` field contains `ibmqResult.result` as returned by the connector — the raw Qiskit Runtime result payload. The current IBM Quantum REST API (Sampler v2) returns measurement outcomes as hex-encoded samples:
+
+```json
+{
+  "results": [
+    {
+      "data": {
+        "c": {
+          "samples": ["0x3", "0x1", "0x3", "..."],
+          "num_bits": 2
+        }
+      }
+    }
+  ]
+}
+```
+
+Each entry in `samples` is a hex integer representing a single shot outcome. `num_bits` gives the number of measured qubits and is required to correctly zero-pad the binary representation.
 
 **Response:**
 ```json
