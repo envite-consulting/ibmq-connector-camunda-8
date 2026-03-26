@@ -1,5 +1,22 @@
 # Using Predefined Quantum Algorithms via a Sidecar
 
+- [Architecture Overview](#architecture-overview)
+- [Sidecar API Contract](#sidecar-api-contract)
+  - [`POST /generate-circuit`](#post-generate-circuit)
+  - [`POST /process-results`](#post-process-results)
+  - [`POST /optimize`](#post-optimize)
+- [BPMN Workflow Structure](#bpmn-workflow-structure)
+  - [One-shot algorithms](#one-shot-algorithms-grovers-bernstein-vazirani-etc)
+  - [Variational algorithms](#variational-algorithms-vqe-qaoa)
+- [Post-Processing by Algorithm Type](#post-processing-by-algorithm-type)
+- [Deploying the Sidecar](#deploying-the-sidecar)
+- [Camunda Marketplace Publication Strategy](#camunda-marketplace-publication-strategy)
+  - [Why the sidecar operations are not part of the IBM Quantum Connector](#why-the-sidecar-operations-are-not-part-of-the-ibm-quantum-connector)
+  - [Two-listing publication strategy](#two-listing-publication-strategy)
+- [Examples](#examples)
+
+---
+
 Modelling a quantum circuit by hand using OpenQASM is impractical for most real-world algorithms. 
 Instead, a **quantum circuit generation sidecar** — a lightweight Python/Qiskit service deployed alongside the connector — translates classical problem inputs into executable quantum circuits and interprets raw measurement results back into classical answers.
 
@@ -87,53 +104,10 @@ The `results` field contains `ibmqResult.result` as returned by the connector �
 }
 ```
 
----
+### `POST /optimize`
 
-## BPMN Workflow Structure
-
-### One-shot algorithms (Grover's, Bernstein-Vazirani, etc.)
-
-Algorithms that require a single circuit execution use the standard polling workflow with two additional HTTP service tasks:
-
-```
-Start → Generate Circuit → Submit Job → [Poll Loop] → Process Results → Review → End
-```
-
-**Process variables:**
-
-| Variable | Set by | Used by |
-|---|---|---|
-| `problem` | Start form | Generate Circuit, Process Results |
-| `circuit` / `params` | Generate Circuit | IBM Quantum Connector |
-| `ibmqJobId` | IBM Quantum Connector (submit) | IBM Quantum Connector (poll) |
-| `ibmqResult` | IBM Quantum Connector (poll) | Process Results |
-| `classicalResult` | Process Results | Review user task |
-
-### Variational algorithms (VQE, QAOA)
-
-Variational algorithms iterate between a quantum circuit execution and a classical optimizer that adjusts the circuit parameters until convergence. 
-This requires a third sidecar endpoint and an additional loop in the  workflow:
-
-```
-Start
-  │
-  ▼
-Generate Circuit (initial params)
-  │
-  ▼
-Submit Job → [Poll Loop]  ──────────────────────────────────┐
-  │                                                         │
-  ▼                                                         │
-Optimize (classical)                                        │
-  │                                                         │
-  ├── Not converged ──▶ Generate Circuit (updated params) ──┘
-  │
-  └── Converged ──▶ Process Final Result → Review → End
-```
-
-#### `POST /optimize`
-
-Called after each quantum execution. Runs the classical optimizer step and returns either updated circuit parameters for the next iteration or a convergence signal.
+Called after each quantum execution. 
+Runs the classical optimizer step and returns either updated circuit parameters for the next iteration or a convergence signal.
 
 **Request:**
 ```json
@@ -172,6 +146,50 @@ The sidecar works statelessly — the workflow passes the full current state (pa
 
 ---
 
+## BPMN Workflow Structure
+
+### One-shot algorithms (Grover's, Bernstein-Vazirani, etc.)
+
+Algorithms that require a single circuit execution use the standard polling workflow with two additional HTTP service tasks:
+
+```
+Start → Generate Circuit → Submit Job → [Poll Loop] → Process Results → Review → End
+```
+
+**Process variables:**
+
+| Variable | Set by | Used by |
+|---|---|---|
+| `problem` | Start form | Generate Circuit, Process Results |
+| `circuit` / `params` | Generate Circuit | IBM Quantum Connector |
+| `ibmqJobId` | IBM Quantum Connector (submit) | IBM Quantum Connector (poll) |
+| `ibmqResult` | IBM Quantum Connector (poll) | Process Results |
+| `classicalResult` | Process Results | Review user task |
+
+### Variational algorithms (VQE, QAOA)
+
+Variational algorithms iterate between a quantum circuit execution and a classical optimizer that adjusts the circuit parameters until convergence.
+This requires the `/optimize` endpoint and an additional loop in the workflow:
+
+```
+Start
+  │
+  ▼
+Generate Circuit (initial params)
+  │
+  ▼
+Submit Job → [Poll Loop]  ──────────────────────────────────┐
+  │                                                         │
+  ▼                                                         │
+Optimize (classical)                                        │
+  │                                                         │
+  ├── Not converged ──▶ Generate Circuit (updated params) ──┘
+  │
+  └── Converged ──▶ Process Final Result → Review → End
+```
+
+---
+
 ## Post-Processing by Algorithm Type
 
 | Algorithm | Raw output | Post-processing |
@@ -188,7 +206,7 @@ The BPMN workflow only receives the final `classicalResult`.
 
 ---
 
-## Deployment
+## Deploying the Sidecar
 
 The sidecar runs as a Docker container alongside the IBM Quantum Connector. 
 A minimal `docker-compose.yml` would look like:
