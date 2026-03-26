@@ -7,7 +7,7 @@
       "type": "textfield",
       "key": "apiKey",
       "label": "IBM Quantum API Key",
-      "description": "Use a Camunda secret: {{secrets.IBMQ_API_KEY}}",
+      "description": "Store your IBM Quantum API key as a Camunda secret named IBMQ_API_KEY and reference it here.",
       "validate": { "required": true }
     },
     {
