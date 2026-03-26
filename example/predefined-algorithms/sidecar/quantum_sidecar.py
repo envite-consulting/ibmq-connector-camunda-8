@@ -54,8 +54,8 @@ def generate_circuit():
         return jsonify({"circuit": circuit, "shots": shots})
 
     if algorithm == "qaoa":
-        circuit, shots = _generate_qaoa_circuit(problem, params)
-        return jsonify({"circuit": circuit, "shots": shots})
+        circuit, shots, used_params = _generate_qaoa_circuit(problem, params)
+        return jsonify({"circuit": circuit, "shots": shots, "params": used_params})
 
     return jsonify({"error": f"Unsupported algorithm: {algorithm}"}), 400
 
@@ -106,7 +106,7 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     return dumps(qc_native), shots
 
 
-def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int]:
+def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int, list]:
     """
     Delegate circuit generation to the quantum-circuit-generator service.
 
@@ -117,15 +117,27 @@ def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int
         circuit_format  – "openqasm2"
         parameters      – optional list [gamma_0, ..., gamma_{p-1}, beta_0, ..., beta_{p-1}]
 
-    Returns OpenQASM 2.0 circuit string.
+    Returns (circuit, shots, used_params).
+    used_params is the parameter list that was sent to the circuit generator so the
+    BPMN workflow can store it as currentParams for the first SPSA iteration.
     """
+    import json as _json
+
+    adj_matrix = problem["adj_matrix"]
+    if isinstance(adj_matrix, str):
+        adj_matrix = _json.loads(adj_matrix)
+
+    p = int(problem.get("p", 1))
+
+    if not params:
+        params = [0.5] * (2 * p)
+
     payload = {
-        "adj_matrix":     problem["adj_matrix"],
-        "p":              problem.get("p", 1),
+        "adj_matrix":     adj_matrix,
+        "p":              p,
         "circuit_format": "openqasm2",
+        "parameters":     params,
     }
-    if params:
-        payload["parameters"] = params
 
     resp = http.post(
         f"{CIRCUIT_GENERATOR_URL}/algorithms/qaoa/maxcut",
@@ -134,7 +146,7 @@ def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int
     )
     resp.raise_for_status()
     data = resp.json()
-    return data["circuit"], int(problem.get("shots", 1024))
+    return data["circuit"], int(problem.get("shots", 1024)), params
 
 
 # ─── /process-results ─────────────────────────────────────────────────────────
@@ -192,11 +204,17 @@ def _process_qaoa_results(problem: dict, results: object) -> dict:
         objective_value  – scalar (negative cut weight for minimisation)
         costs            – per-bitstring cost breakdown
     """
+    import json as _json
+
+    adj_matrix = problem["adj_matrix"]
+    if isinstance(adj_matrix, str):
+        adj_matrix = _json.loads(adj_matrix)
+
     counts = _extract_counts(results)
 
     payload = {
         "counts":                counts,
-        "adj_matrix":            problem["adj_matrix"],
+        "adj_matrix":            adj_matrix,
         "objFun":                problem.get("objFun", "expectation"),
         "objFun_hyperparameters": problem.get("objFun_hyperparameters", {}),
         "visualization":         False,
