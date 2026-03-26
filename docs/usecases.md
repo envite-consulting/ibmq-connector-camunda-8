@@ -81,7 +81,7 @@ Start Form → Generate Circuit → Submit Job → [Poll Loop] → Process Resul
 3. Start a process instance via Camunda Tasklist with the following start form inputs:
 
    | Field | Example value |
-      |---|---|
+   |---|---|
    | Target bitstring | `11` |
    | Shots | `1024` |
    | Sidecar URL | your public sidecar URL, e.g. `https://xxxx.ngrok.io` |
