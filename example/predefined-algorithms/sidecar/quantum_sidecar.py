@@ -64,20 +64,31 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     """
     Build a Grover's search circuit using Qiskit and return it as OpenQASM 3.
 
-    The circuit is transpiled to the native basis gates required by the IBM Quantum
-    REST API (x, sx, rz, cx) — the REST API does not transpile circuits server-side.
+    The circuit is transpiled to native basis gates — the IBM Quantum REST API does
+    not transpile circuits server-side. The default gate set targets modern IBM backends
+    (Eagle, Falcon R10) which use ECR as the two-qubit gate. Older backends that use CX
+    instead can pass basis_gates explicitly, e.g. ["id", "rz", "sx", "x", "cx"].
 
     problem fields:
-        target  – bitstring to search for, e.g. "11" (default "11")
-        shots   – number of circuit repetitions (default 1024)
+        target      – bitstring to search for, e.g. "11" (default "11")
+        shots       – number of circuit repetitions (default 1024)
+        basis_gates – list of native gate names for the target backend
+                      (default ["id", "rz", "sx", "x", "ecr"])
     """
     from qiskit import QuantumCircuit
     from qiskit.circuit.library import PhaseOracle, GroverOperator
     from qiskit.compiler import transpile
     from qiskit.qasm3 import dumps
 
-    target: str = problem.get("target", "11")
-    shots: int  = int(problem.get("shots", 1024))
+    target:          str  = problem.get("target", "11")
+    shots:           int  = int(problem.get("shots", 1024))
+    basis_gates_raw        = problem.get("basis_gates") or None
+    if basis_gates_raw is None:
+        basis_gates: list = ["id", "rx", "rz", "sx", "x", "cz"]
+    elif isinstance(basis_gates_raw, str):
+        basis_gates = [g.strip() for g in basis_gates_raw.split(",") if g.strip()]
+    else:
+        basis_gates = basis_gates_raw
     n = len(target)
 
     expr = " & ".join(
@@ -91,7 +102,7 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     qc.compose(grover_op, inplace=True)
     qc.measure(range(n), range(n))
 
-    qc_native = transpile(qc, basis_gates=["x", "sx", "rz", "cx"], optimization_level=3)
+    qc_native = transpile(qc, basis_gates=basis_gates, optimization_level=3)
     return dumps(qc_native), shots
 
 
@@ -389,21 +400,28 @@ def _extract_counts(results: object) -> dict[str, int]:
     and the objective-evaluation-service.
 
     Expected shape of ibmqResult.result after JSON round-trip:
-        [
-          {
-            "data": {
-              "c": {
-                "array": [[0, 1], [1, 1], ...]   # one bit-vector per shot, LSB first
+        {
+          "results": [
+            {
+              "data": {
+                "c": {
+                  "array": [[0, 1], [1, 1], ...]   # one bit-vector per shot, LSB first
+                }
               }
             }
-          }
-        ]
+          ]
+        }
 
     Adapt this function if your connector serialises the payload differently.
     """
     counts: dict[str, int] = {}
     try:
-        pub_results = results if isinstance(results, list) else [results]
+        if isinstance(results, list):
+            pub_results = results
+        elif isinstance(results, dict) and "results" in results:
+            pub_results = results["results"]
+        else:
+            pub_results = [results]
         for pub in pub_results:
             data = pub.get("data", {}) if isinstance(pub, dict) else {}
             for creg in data.values():
