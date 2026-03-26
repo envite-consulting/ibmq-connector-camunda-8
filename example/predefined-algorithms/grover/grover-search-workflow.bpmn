@@ -24,7 +24,7 @@
       apiKey         – string: IBM Quantum API key (use secret: {{secrets.IBMQ_API_KEY}})
       ibmqUrl        – string: https://quantum.cloud.ibm.com/api
       ibmqInstance   – string: IBM Quantum instance CRN
-      backend        – string: ibmq_qasm_simulator | ibm_brisbane | ...
+      backend        – string: ibm_brisbane | ...
   -->
 
   <process id="grover-search-workflow" name="Grover&#x2019;s Search &#x2013; IBM Quantum Blueprint" isExecutable="true">
@@ -48,7 +48,7 @@
 
     <!-- ── 1. Generate Grover circuit via sidecar ────────────────────────
          Uses the "IBM Quantum: Generate Circuit" element template
-         (element-templates/ibmq-sidecar-generate-circuit.json).
+         (example/predefined-algorithms/element-templates/ibmq-sidecar-generate-circuit.json).
          Result expression maps sidecar response to circuit + shots process variables.
     -->
 
@@ -149,21 +149,26 @@
 
     <!-- ── 5. Status gateway ──────────────────────────────────────────── -->
 
-    <exclusiveGateway id="status-gateway" name="Job&#10;terminated?" default="to-timer-loop">
+    <exclusiveGateway id="status-gateway" name="Job&#10;status?" default="to-timer-loop">
       <incoming>to-gateway</incoming>
       <outgoing>to-timer-loop</outgoing>
       <outgoing>to-process-results</outgoing>
+      <outgoing>to-job-failed</outgoing>
     </exclusiveGateway>
 
-    <sequenceFlow id="to-timer-loop" name="No" sourceRef="status-gateway" targetRef="poll-timer" />
+    <sequenceFlow id="to-timer-loop" name="Running" sourceRef="status-gateway" targetRef="poll-timer" />
 
-    <sequenceFlow id="to-process-results" name="Yes" sourceRef="status-gateway" targetRef="process-results">
-      <conditionExpression xsi:type="tFormalExpression">= ibmqStatus in ["COMPLETED","FAILED","CANCELLED","ERROR"]</conditionExpression>
+    <sequenceFlow id="to-process-results" name="Completed" sourceRef="status-gateway" targetRef="process-results">
+      <conditionExpression xsi:type="tFormalExpression">= ibmqStatus = "COMPLETED"</conditionExpression>
+    </sequenceFlow>
+
+    <sequenceFlow id="to-job-failed" name="Failed / Cancelled" sourceRef="status-gateway" targetRef="review-job-failure">
+      <conditionExpression xsi:type="tFormalExpression">= ibmqStatus in ["FAILED","ERROR","CANCELLED"]</conditionExpression>
     </sequenceFlow>
 
     <!-- ── 6. Post-process quantum results via sidecar ───────────────────
          Uses the "IBM Quantum: Process Results" element template
-         (element-templates/ibmq-sidecar-process-results.json).
+         (example/predefined-algorithms/element-templates/ibmq-sidecar-process-results.json).
          Passes the raw ibmqResult.result payload back to the sidecar.
          Result expression maps the sidecar answer to classicalResult.
     -->
@@ -190,7 +195,24 @@
 
     <sequenceFlow id="to-review" sourceRef="process-results" targetRef="review" />
 
-    <!-- ── 7. Human review ───────────────────────────────────────────── -->
+    <!-- ── 7a. Job failure review ────────────────────────────────────── -->
+
+    <userTask id="review-job-failure" name="Review&#10;job failure">
+      <extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="grover-job-failure-form" />
+      </extensionElements>
+      <incoming>to-job-failed</incoming>
+      <outgoing>to-end-failed</outgoing>
+    </userTask>
+
+    <sequenceFlow id="to-end-failed" sourceRef="review-job-failure" targetRef="end-failed" />
+
+    <endEvent id="end-failed" name="Job&#10;failed">
+      <incoming>to-end-failed</incoming>
+    </endEvent>
+
+    <!-- ── 7b. Human review ───────────────────────────────────────────── -->
 
     <userTask id="review" name="Review&#10;search result">
       <extensionElements>
@@ -246,13 +268,25 @@
       <bpmndi:BPMNShape id="status-gateway_di" bpmnElement="status-gateway" isMarkerVisible="true">
         <dc:Bounds x="865" y="92" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="852" y="149" width="76" height="27" />
+          <dc:Bounds x="842" y="76" width="36" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="process-results_di" bpmnElement="process-results">
         <dc:Bounds x="990" y="77" width="100" height="80" />
         <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="review-job-failure_di" bpmnElement="review-job-failure">
+        <dc:Bounds x="840" y="230" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="end-failed_di" bpmnElement="end-failed">
+        <dc:Bounds x="1012" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1001" y="295" width="58" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="review_di" bpmnElement="review">
@@ -306,8 +340,21 @@
         <di:waypoint x="915" y="117" />
         <di:waypoint x="990" y="117" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="938" y="99" width="18" height="14" />
+          <dc:Bounds x="914" y="99" width="54" height="14" />
         </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-job-failed_di" bpmnElement="to-job-failed">
+        <di:waypoint x="890" y="142" />
+        <di:waypoint x="890" y="230" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="898" y="178" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="to-end-failed_di" bpmnElement="to-end-failed">
+        <di:waypoint x="940" y="270" />
+        <di:waypoint x="1012" y="270" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="to-review_di" bpmnElement="to-review">
