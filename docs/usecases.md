@@ -55,13 +55,26 @@ Start Form → Generate Circuit → Submit Job → [Poll Loop] → Process Resul
 
 ### Running the example
 
+> **Warning (Camunda SaaS only):** The sidecar is called by the built-in Camunda HTTP Connector (`io.camunda:http-json:1`), which executes inside the **Camunda SaaS** infrastructure — not locally.
+> This means `http://quantum-sidecar:5000` is not reachable from the cloud.
+> The sidecar must be publicly accessible when using Camunda SaaS.
+>
+> When running a **local Camunda setup** (e.g. via Docker), the HTTP Connector executes locally and can reach the sidecar by its Docker service name without any extra steps.
+>
+> For **Camunda SaaS**, use a tunneling tool such as [ngrok](https://ngrok.com/) to expose the sidecar during testing:
+> ```bash
+> ngrok http 5000
+> ```
+> Then use the generated public URL (e.g. `https://xxxx.ngrok.io`) as the `sidecarUrl` below.
+> For production deployments, host the sidecar container on a publicly reachable endpoint.
+
 1. Start the connector and sidecar:
    ```bash
    cd example/predefined-algorithms
    docker compose up --build
    ```
 
-2. Deploy the workflow and form to your Camunda cluster (done automatically if `ibmq.example.deploy=true` is set in `application.properties`).
+2. Deploy the workflow and forms to your Camunda cluster by uploading the files from `example/predefined-algorithms/grover/` via the Camunda Web Modeler.
 
 3. Start a process instance via Camunda Tasklist with the following start form inputs:
 
@@ -69,11 +82,11 @@ Start Form → Generate Circuit → Submit Job → [Poll Loop] → Process Resul
    |---|---|
    | Target bitstring | `11` |
    | Shots | `1024` |
-   | Sidecar URL | `http://quantum-sidecar:5000` |
-   | IBM Quantum API Key | your API key |
+   | Sidecar URL | your public sidecar URL, e.g. `https://xxxx.ngrok.io` |
+   | IBM Quantum API Key | `{{secrets.IBMQ_API_KEY}}` |
    | IBM Quantum URL | `https://quantum.cloud.ibm.com/api` |
-   | IBM Quantum Instance | your instance CRN |
-   | Backend | `ibmq_qasm_simulator` |
+   | IBM Quantum Instance | `{{secrets.IBMQ_INSTANCE}}` |
+   | Backend | your backend name, e.g. `ibm_brisbane` |
 
 4. After the quantum job completes, a Review user task appears in Tasklist. `classicalResult.answer` should equal the target bitstring, with `classicalResult.found = true` and a high `classicalResult.confidence`.
 
