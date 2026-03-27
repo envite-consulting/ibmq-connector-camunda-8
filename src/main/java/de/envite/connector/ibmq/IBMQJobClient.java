@@ -18,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Instant;
 import java.util.Set;
 
-import static de.envite.connector.ibmq.HttpHelper.requireBody;
+import static de.envite.connector.ibmq.util.HttpHelper.requireBody;
 import static de.envite.connector.ibmq.IBMQConstants.*;
 
 /**

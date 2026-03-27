@@ -1,9 +1,9 @@
-package de.envite.connector.ibmq;
+package de.envite.connector.ibmq.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.ResponseEntity;
 
-final class HttpHelper {
+public final class HttpHelper {
 
     private HttpHelper() {}
 
@@ -15,7 +15,7 @@ final class HttpHelper {
      * @return the non-null response body
      * @throws RuntimeException if the response is not successful or has no body
      */
-    static JsonNode requireBody(ResponseEntity<JsonNode> response, String context) {
+    public static JsonNode requireBody(ResponseEntity<JsonNode> response, String context) {
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
             throw new RuntimeException("Unexpected response during %s: %s".formatted(
                     context, response.getStatusCode()));

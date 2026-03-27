@@ -1,6 +1,6 @@
 # IBM Quantum Connector for Camunda 8 ⚛️
 
-*TODO: slogan 🚀*
+*Run quantum circuits from your BPMN workflow — on real IBM Quantum hardware 🚀*
 
 [![Build](https://github.com/wederbn/ibmq-connector-camunda-8/actions/workflows/build.yml/badge.svg)](https://github.com/wederbn/ibmq-connector-camunda-8/actions/workflows/build.yml)
 [![Compatible with: Camunda Platform 8](https://img.shields.io/badge/Compatible%20with-Camunda%20Platform%208-26d07c)](https://docs.camunda.io/)
@@ -8,9 +8,11 @@
 [![sponsored](https://img.shields.io/badge/sponsoredBy-envite-g.svg)](https://envite.de/)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](/LICENSE)
 
-TODO: general description
+The **IBM Quantum Connector** is a [Camunda 8 outbound connector](https://docs.camunda.io/docs/components/connectors/introduction-to-connectors/) that integrates quantum computing into BPMN workflows by submitting and polling jobs on [IBM Quantum](https://quantum.cloud.ibm.com/) backends via the Qiskit Runtime API.
+It supports both Sampler and Estimator primitives, accepts quantum circuits as OpenQASM strings or raw JSON parameters, and offers blocking and non-blocking (polling) execution patterns to handle the unpredictable queue times of real quantum hardware.
+For higher-level algorithms — such as Grover's Search or Quantum Approximate Optimization Algorithm (QAOA) — the [IBM Quantum Algorithm Accelerator pattern](docs/use-predefined-algorithms.md) extends the connector with a lightweight Python sidecar that generates transpiled circuits from classical problem inputs and interprets raw measurement results, enabling variational algorithms with classical optimizer loops entirely within a BPMN workflow.
 
-Two example workflows are provided in the `example/getting-started/` directory:
+In addition to the workflows orchestrating complex quantum algorithms, two simpel example workflows are provided in the `example/getting-started/` directory:
 
 - **[Blocking](example/getting-started/ibmq-example-workflow_blocking.bpmn)** — submits a circuit and blocks the connector thread until the job reaches a terminal state (`waitForResult=true`). This is simple to use, but quantum jobs on real hardware backends may queue for longer than the configured timeout, causing the connector to throw a timeout exception and Camunda to re-execute the circuit. Further, this can lead to an incidents if all retries are used.
 - **[Polling](example/getting-started/ibmq-example-workflow_polling.bpmn)** — submits the job without waiting (`waitForResult=false`), then polls the result every 30 seconds via a BPMN timer loop using the `GET_JOB_RESULT` operation. Recommended for real hardware backends where execution time is unpredictable.
@@ -32,7 +34,7 @@ Follow the steps under [How to Run](#-how-to-run), and then import the file into
     * [Connector Configuration and Output Reference](docs/connector-reference.md)
     * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md)
     * [Example Use Cases & HowTos](docs/usecases.md)
-* 🛠️ [Development & Project Setup](#-development--project-setup)
+* 🛠️ [Development and Project Setup](#️-development-and-project-setup)
 
 ---
 
@@ -98,7 +100,7 @@ Learn how to effectively use the connectors in your processes:
 * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md): Architecture and integration guide for using a Qiskit sidecar to generate quantum circuits from classical problem inputs and post-process measurement results — including support for variational algorithms (VQE, QAOA) with classical optimizer loops.
 * [Example Use Cases & HowTos](docs/usecases.md): End-to-end workflow examples including Grover's Search
 
-## 🛠️ Development & Project Setup
+## 🛠️ Development and Project Setup
 
 ### Project Structure
 
@@ -111,9 +113,9 @@ src/main/java/de/envite/connector/ibmq/
 ├── IBMQAuthenticator.java          # IBM Cloud IAM token exchange
 ├── IBMQParameterHandler.java       # Circuit input normalisation (OpenQASM / Direct Params)
 ├── IBMQConstants.java              # Shared constants (API paths, headers, program IDs)
-├── HttpHelper.java                 # RestTemplate factory
 ├── dto/                            # Request / response DTOs
 ├── model/                          # Model classes
+├── util/                           # Shared utilities
 └── deployment/                     # Auto-deploys example workflows on startup (optional)
 
 element-templates/                  # Camunda element template (connector UI)

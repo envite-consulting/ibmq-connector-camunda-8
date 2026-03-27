@@ -49,10 +49,6 @@ public class IBMQParameterHandler {
      * by most simulators and real backends via automatic up-conversion.</p>
      */
     private JsonNode buildOpenQasmParams(IBMQSubmitJobRequestDto request) {
-        if (request.getCircuit() == null || request.getCircuit().isBlank()) {
-            throw new IllegalArgumentException("'circuit' must not be empty when circuitInputMode is OPEN_QASM");
-        }
-
         ObjectNode params = objectMapper.createObjectNode();
         params.put("version", 2);
         ArrayNode pubs = params.putArray(FIELD_PUBS);
@@ -67,9 +63,6 @@ public class IBMQParameterHandler {
     }
 
     private JsonNode parseDirectParams(IBMQSubmitJobRequestDto request) {
-        if (request.getParams() == null || request.getParams().isBlank()) {
-            throw new IllegalArgumentException("'params' must not be empty when circuitInputMode is DIRECT_PARAMS");
-        }
         try {
             return objectMapper.readTree(request.getParams());
         } catch (Exception e) {
