@@ -1,0 +1,70 @@
+{
+  "id": "qaoa-input-form",
+  "type": "default",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textarea",
+      "key": "problem.adj_matrix",
+      "label": "Adjacency Matrix (JSON)",
+      "description": "2-D list of floats representing the graph. Example: 4-node graph with 5 edges.",
+      "defaultValue": "[[0,1,1,0],[1,0,1,1],[1,1,0,1],[0,1,1,0]]",
+      "validate": { "required": true }
+    },
+    {
+      "type": "number",
+      "key": "problem.p",
+      "label": "QAOA Depth (p)",
+      "description": "Number of QAOA layers. Higher p can improve solution quality at the cost of a deeper circuit.",
+      "defaultValue": 1
+    },
+    {
+      "type": "number",
+      "key": "problem.shots",
+      "label": "Shots",
+      "description": "Number of circuit repetitions per IBM Quantum job.",
+      "defaultValue": 1024
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "textfield",
+      "key": "sidecarUrl",
+      "label": "Sidecar URL",
+      "description": "Base URL of the quantum algorithm sidecar. Use the Docker service name when running via docker compose.",
+      "defaultValue": "http://quantum-sidecar:5000",
+      "validate": { "required": true }
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "textfield",
+      "key": "apiKey",
+      "label": "IBM Quantum API Key",
+      "description": "Store your IBM Quantum API key as a Camunda secret named IBMQ_API_KEY and reference it here.",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqUrl",
+      "label": "IBMQ URL",
+      "defaultValue": "https://quantum.cloud.ibm.com/api"
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqInstance",
+      "label": "IBMQ Instance CRN",
+      "description": "Cloud Resource Name (CRN). Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textfield",
+      "key": "backend",
+      "label": "Backend",
+      "description": "Name of the quantum backend to use, e.g. ibm_brisbane.",
+      "validate": { "required": true }
+    }
+  ]
+}
