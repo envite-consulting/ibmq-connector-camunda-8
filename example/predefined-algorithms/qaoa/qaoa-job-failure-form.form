@@ -27,7 +27,7 @@
       "type": "number",
       "key": "iteration",
       "label": "Failed at iteration",
-      "description": "SPSA iteration at which the job failed.",
+      "description": "SPSA iteration at which the job failed (0 = first iteration).",
       "readonly": true
     }
   ]
