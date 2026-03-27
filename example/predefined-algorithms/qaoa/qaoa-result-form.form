@@ -1,0 +1,38 @@
+{
+  "id": "qaoa-result-form",
+  "type": "default",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "number",
+      "key": "objectiveValue",
+      "label": "Objective Value",
+      "description": "Best objective value (negative Max-Cut weight) found by the SPSA optimizer. More negative means a larger cut.",
+      "readonly": true
+    },
+    {
+      "type": "number",
+      "key": "iteration",
+      "label": "Iterations",
+      "description": "Last BPMN loop iteration index (0 = first iteration). Total IBM Quantum jobs executed equals this value plus one.",
+      "readonly": true
+    },
+    {
+      "type": "textfield",
+      "key": "convergenceReason",
+      "label": "Convergence Reason",
+      "description": "\"converged\": optimizer reached a stable solution. \"max_iterations\": stopped at the iteration cap — consider increasing Max Iterations or adjusting QAOA depth.",
+      "readonly": true
+    },
+    {
+      "type": "separator"
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqResult.resultUrl",
+      "label": "IBM Quantum Job URL",
+      "description": "Link to the last IBM Quantum job in the IBM Quantum UI.",
+      "readonly": true
+    }
+  ]
+}

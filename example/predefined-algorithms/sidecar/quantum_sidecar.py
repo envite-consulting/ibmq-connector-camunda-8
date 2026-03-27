@@ -394,10 +394,11 @@ def _spsa_step(
 
         if (no_improve >= patience and k > 0) or iteration >= max_iterations:
             return {
-                "converged":      True,
-                "optimal_params": params.tolist(),
-                "objective_value": best_obj,
-                "iteration":      iteration,
+                "converged":          True,
+                "convergence_reason": "max_iterations" if iteration >= max_iterations else "converged",
+                "optimal_params":     params.tolist(),
+                "objective_value":    best_obj,
+                "iteration":          iteration,
             }
 
         # Generate Rademacher perturbation vector
