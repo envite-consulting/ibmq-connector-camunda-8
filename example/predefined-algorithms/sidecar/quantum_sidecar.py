@@ -27,12 +27,34 @@ import os
 import numpy as np
 import requests as http
 from flask import Flask, request, jsonify
+from qiskit import QuantumCircuit
+from qiskit.compiler import transpile
+from qiskit.qasm3 import dumps as qasm3_dumps
 
 app = Flask(__name__)
 
 OBJECTIVE_EVAL_URL = os.environ.get(
     "OBJECTIVE_EVAL_URL", "http://objective-evaluation-service:5072"
 )
+
+
+# ─── Shared circuit helpers ───────────────────────────────────────────────────
+
+_DEFAULT_BASIS_GATES = ["id", "rz", "sx", "x", "ecr"]
+
+def _resolve_basis_gates(problem: dict) -> list:
+    """Return the native gate set for the target backend.
+
+    Reads problem.basis_gates (comma-separated string or list).
+    Falls back to ECR-based defaults for modern IBM backends (Eagle, Heron).
+    Use "id,rz,sx,x,cx" for older backends (Falcon, Hummingbird).
+    """
+    raw = problem.get("basis_gates") or None
+    if raw is None:
+        return _DEFAULT_BASIS_GATES
+    if isinstance(raw, str):
+        return [g.strip() for g in raw.split(",") if g.strip()]
+    return raw
 
 
 # ─── /generate-circuit ────────────────────────────────────────────────────────
@@ -67,23 +89,13 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     problem fields:
         target      – bitstring to search for, e.g. "11" (default "11")
         shots       – number of circuit repetitions (default 1024)
-        basis_gates – list of native gate names for the target backend
-                      (default ["id", "rz", "sx", "x", "ecr"])
+        basis_gates – see _resolve_basis_gates()
     """
-    from qiskit import QuantumCircuit
     from qiskit.circuit.library import PhaseOracle, GroverOperator
-    from qiskit.compiler import transpile
-    from qiskit.qasm3 import dumps
 
-    target:          str  = problem.get("target", "11")
-    shots:           int  = int(problem.get("shots", 1024))
-    basis_gates_raw        = problem.get("basis_gates") or None
-    if basis_gates_raw is None:
-        basis_gates: list = ["id", "rx", "rz", "sx", "x", "cz"]
-    elif isinstance(basis_gates_raw, str):
-        basis_gates = [g.strip() for g in basis_gates_raw.split(",") if g.strip()]
-    else:
-        basis_gates = basis_gates_raw
+    target:      str  = problem.get("target", "11")
+    shots:       int  = int(problem.get("shots", 1024))
+    basis_gates: list = _resolve_basis_gates(problem)
     n = len(target)
 
     expr = " & ".join(
@@ -98,7 +110,7 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     qc.measure(range(n), range(n))
 
     qc_native = transpile(qc, basis_gates=basis_gates, optimization_level=3)
-    return dumps(qc_native), shots
+    return qasm3_dumps(qc_native), shots
 
 
 def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int, list]:
@@ -112,11 +124,9 @@ def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int
         adj_matrix  – 2-D list of floats representing the graph
         p           – QAOA depth / number of layers (default 1)
         shots       – number of circuit repetitions (default 1024)
+        basis_gates – see _resolve_basis_gates()
     """
     import json as _json
-    from qiskit import QuantumCircuit
-    from qiskit.compiler import transpile
-    from qiskit.qasm3 import dumps
 
     adj_matrix = problem["adj_matrix"]
     if isinstance(adj_matrix, str):
@@ -153,9 +163,8 @@ def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int
 
     qc.measure(range(n), range(n))
 
-    basis_gates = ["id", "rx", "rz", "sx", "x", "cz"]
-    qc_native   = transpile(qc, basis_gates=basis_gates, optimization_level=3)
-    return dumps(qc_native), shots, params
+    qc_native = transpile(qc, basis_gates=_resolve_basis_gates(problem), optimization_level=3)
+    return qasm3_dumps(qc_native), shots, params
 
 
 # ─── /process-results ─────────────────────────────────────────────────────────
