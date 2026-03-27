@@ -124,7 +124,7 @@ Start Form → Generate Circuit → Submit Job → [Poll Loop] → Evaluate Resu
 | Step | Component | What it does |
 |---|---|---|
 | Start Form | Camunda Form | Collects `problem` (adj_matrix JSON, p, shots), `sidecarUrl`, IBM Quantum credentials |
-| Generate Circuit | HTTP Connector → Sidecar `/generate-circuit` | Delegates to the quantum-circuit-generator service; returns `circuit` (OpenQASM), `shots`, and the `currentParams` used |
+| Generate Circuit | HTTP Connector → Sidecar `/generate-circuit` | Builds and transpiles a QAOA MaxCut circuit using Qiskit; backend properties (basis gates, coupling map) are auto-fetched from IBM Quantum; returns `circuit` (OpenQASM 3), `shots`, and the `currentParams` used |
 | Submit Job | IBM Quantum Connector (`SUBMIT_JOB`) | Submits the circuit to the selected IBM Quantum backend; returns `ibmqJobId` |
 | Poll Loop | Timer + IBM Quantum Connector (`GET_JOB_RESULT`) | Waits 30 s, checks job status, loops until terminal state |
 | Evaluate Results | HTTP Connector → Sidecar `/process-results` | Extracts bitstring counts, delegates to the objective-evaluation-service; returns `objectiveValue` (negative MaxCut weight) |
@@ -149,10 +149,10 @@ The `optimizer_state` blob returned by each `/optimize` call is passed back unch
 |---|---|---|
 | `problem` | Start form | Generate Circuit, Evaluate Results, Optimize |
 | `sidecarUrl` | Start form | Generate Circuit, Evaluate Results, Optimize |
-| `apiKey` | Start form | Submit Job, Check Job |
+| `apiKey` | Start form | Generate Circuit, Submit Job, Check Job |
 | `ibmqUrl` | Start form | Submit Job, Check Job |
-| `ibmqInstance` | Start form | Submit Job, Check Job |
-| `backend` | Start form | Submit Job |
+| `ibmqInstance` | Start form | Generate Circuit, Submit Job, Check Job |
+| `backend` | Start form | Generate Circuit, Submit Job |
 | `circuit` | Generate Circuit | Submit Job |
 | `shots` | Generate Circuit | Submit Job |
 | `currentParams` | Generate Circuit (first call), Optimize (subsequent calls) | Generate Circuit, Optimize |
@@ -175,7 +175,7 @@ The `optimizer_state` blob returned by each `/optimize` call is passed back unch
    cd example/predefined-algorithms
    docker compose --profile qaoa up --build
    ```
-   The `--profile qaoa` flag additionally starts the [`quantum-circuit-generator`](https://github.com/UST-QuAntiL/quantum-circuit-generator) (port 5073) and [`objective-evaluation-service`](https://github.com/UST-QuAntiL/objective-evaluation-service) (port 5072) containers, which the sidecar delegates QAOA circuit generation and objective evaluation to. These services are not needed for the Grover example.
+   The `--profile qaoa` flag additionally starts the [`objective-evaluation-service`](https://github.com/UST-QuAntiL/objective-evaluation-service) (port 5072), which the sidecar delegates QAOA objective evaluation to. Circuit generation is handled locally by the sidecar using Qiskit, with backend properties (basis gates, coupling map) auto-fetched from IBM Quantum at runtime. The objective-evaluation-service is not needed for the Grover example.
 
 2. Deploy the workflow and forms to your Camunda cluster by uploading the files from `example/predefined-algorithms/qaoa/` via the Camunda Web Modeler.
 

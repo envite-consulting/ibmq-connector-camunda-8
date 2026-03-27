@@ -26,7 +26,7 @@
           <zeebe:input source="= sidecarUrl + &#34;/generate-circuit&#34;" target="url" />
           <zeebe:input source="= &#34;POST&#34;" target="method" />
           <zeebe:input source="= {&#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
-          <zeebe:input source="= {algorithm: &#34;qaoa&#34;, problem: problem, params: currentParams}" target="body" />
+          <zeebe:input source="= {algorithm: &#34;qaoa&#34;, problem: problem, params: currentParams, apiKey: apiKey, ibmqInstance: ibmqInstance, backend: backend}" target="body" />
         </zeebe:ioMapping>
       </extensionElements>
       <incoming>to-generate</incoming>

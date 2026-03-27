@@ -26,12 +26,6 @@
       "defaultValue": 1024
     },
     {
-      "type": "textfield",
-      "key": "problem.basis_gates",
-      "label": "Basis Gates (optional)",
-      "description": "Comma-separated native gate set of your backend. Default: id,rz,sx,x,ecr (modern IBM backends). Use id,rz,sx,x,cx for older backends."
-    },
-    {
       "type": "separator"
     },
     {

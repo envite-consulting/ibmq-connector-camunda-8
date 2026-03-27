@@ -59,12 +59,6 @@
       "description": "Name of the quantum backend to use, e.g. ibm_brisbane. Retrieve from the IBM Quantum UI or run GET /v1/backends with your CRN to list available backends.",
       "defaultValue": "",
       "validate": { "required": true }
-    },
-    {
-      "type": "textfield",
-      "key": "problem.basis_gates",
-      "label": "Basis Gates (optional)",
-      "description": "Comma-separated native gate names for your backend, e.g. id,rz,sx,x,ecr. Defaults to ECR-based backends (Eagle, Falcon R10). Use cx instead of ecr for older backends."
     }
   ]
 }

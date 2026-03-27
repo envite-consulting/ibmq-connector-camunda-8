@@ -68,7 +68,7 @@
           <zeebe:input source="= sidecarUrl + &quot;/generate-circuit&quot;" target="url" />
           <zeebe:input source="= &quot;POST&quot;" target="method" />
           <zeebe:input source="= {&quot;Content-Type&quot;: &quot;application/json&quot;}" target="headers" />
-          <zeebe:input source="= {algorithm: &quot;grover&quot;, problem: problem}" target="body" />
+          <zeebe:input source="= {algorithm: &quot;grover&quot;, problem: problem, apiKey: apiKey, ibmqInstance: ibmqInstance, backend: backend}" target="body" />
         </zeebe:ioMapping>
       </extensionElements>
       <incoming>to-generate</incoming>

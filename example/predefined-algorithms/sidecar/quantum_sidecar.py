@@ -30,6 +30,7 @@ from flask import Flask, request, jsonify
 from qiskit import QuantumCircuit
 from qiskit.compiler import transpile
 from qiskit.qasm3 import dumps as qasm3_dumps
+from qiskit_ibm_runtime import QiskitRuntimeService
 
 app = Flask(__name__)
 
@@ -42,19 +43,46 @@ OBJECTIVE_EVAL_URL = os.environ.get(
 
 _DEFAULT_BASIS_GATES = ["id", "rz", "sx", "x", "ecr"]
 
-def _resolve_basis_gates(problem: dict) -> list:
-    """Return the native gate set for the target backend.
+_backend_cache: dict = {}
 
-    Reads problem.basis_gates (comma-separated string or list).
-    Falls back to ECR-based defaults for modern IBM backends (Eagle, Heron).
-    Use "id,rz,sx,x,cx" for older backends (Falcon, Hummingbird).
+
+def _get_ibm_backend(api_key: str, ibmq_instance: str, backend_name: str):
+    """Fetch and cache the IBM Quantum backend object via Qiskit IBM Runtime."""
+    cache_key = (ibmq_instance, backend_name)
+    if cache_key not in _backend_cache:
+        service = QiskitRuntimeService(
+            channel="ibm_cloud",
+            token=api_key,
+            instance=ibmq_instance,
+        )
+        _backend_cache[cache_key] = service.backend(backend_name)
+    return _backend_cache[cache_key]
+
+
+def _resolve_transpile_args(problem: dict, backend_info: dict) -> dict:
+    """Return kwargs for Qiskit transpile().
+
+    Priority:
+    1. problem.basis_gates – explicit user override (comma-separated string or list)
+    2. IBM Quantum backend object – auto-fetched via backend_info credentials;
+       lets Qiskit handle basis_gates, coupling_map, and all other constraints
+    3. _DEFAULT_BASIS_GATES fallback
     """
     raw = problem.get("basis_gates") or None
-    if raw is None:
-        return _DEFAULT_BASIS_GATES
-    if isinstance(raw, str):
-        return [g.strip() for g in raw.split(",") if g.strip()]
-    return raw
+    if raw is not None:
+        gates = [g.strip() for g in raw.split(",") if g.strip()] if isinstance(raw, str) else raw
+        return {"basis_gates": gates}
+
+    api_key  = backend_info.get("api_key")
+    instance = backend_info.get("ibmq_instance")
+    backend  = backend_info.get("backend")
+    if api_key and instance and backend:
+        try:
+            return {"backend": _get_ibm_backend(api_key, instance, backend)}
+        except Exception as exc:
+            app.logger.warning("Could not fetch IBM backend %s: %s", backend, exc)
+
+    return {"basis_gates": _DEFAULT_BASIS_GATES}
 
 
 # ─── /generate-circuit ────────────────────────────────────────────────────────
@@ -65,19 +93,24 @@ def generate_circuit():
     algorithm = data.get("algorithm", "grover")
     problem   = data.get("problem", {})
     params    = data.get("params")          # current variational params (QAOA only)
+    backend_info = {
+        "api_key":       data.get("apiKey"),
+        "ibmq_instance": data.get("ibmqInstance"),
+        "backend":       data.get("backend"),
+    }
 
     if algorithm == "grover":
-        circuit, shots = _generate_grover_circuit(problem)
+        circuit, shots = _generate_grover_circuit(problem, backend_info)
         return jsonify({"circuit": circuit, "shots": shots})
 
     if algorithm == "qaoa":
-        circuit, shots, used_params = _generate_qaoa_circuit(problem, params)
+        circuit, shots, used_params = _generate_qaoa_circuit(problem, params, backend_info)
         return jsonify({"circuit": circuit, "shots": shots, "params": used_params})
 
     return jsonify({"error": f"Unsupported algorithm: {algorithm}"}), 400
 
 
-def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
+def _generate_grover_circuit(problem: dict, backend_info: dict) -> tuple[str, int]:
     """
     Build a Grover's search circuit using Qiskit and return it as OpenQASM 3.
 
@@ -93,9 +126,9 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     """
     from qiskit.circuit.library import PhaseOracle, GroverOperator
 
-    target:      str  = problem.get("target", "11")
-    shots:       int  = int(problem.get("shots", 1024))
-    basis_gates: list = _resolve_basis_gates(problem)
+    target:         str  = problem.get("target", "11")
+    shots:          int  = int(problem.get("shots", 1024))
+    transpile_args: dict = _resolve_transpile_args(problem, backend_info)
     n = len(target)
 
     expr = " & ".join(
@@ -109,11 +142,11 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     qc.compose(grover_op, inplace=True)
     qc.measure(range(n), range(n))
 
-    qc_native = transpile(qc, basis_gates=basis_gates, optimization_level=3)
+    qc_native = transpile(qc, **transpile_args, optimization_level=3)
     return qasm3_dumps(qc_native), shots
 
 
-def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int, list]:
+def _generate_qaoa_circuit(problem: dict, params: list | None, backend_info: dict) -> tuple[str, int, list]:
     """
     Build a QAOA MaxCut circuit using Qiskit and return it as OpenQASM 3.
 
@@ -163,7 +196,7 @@ def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int
 
     qc.measure(range(n), range(n))
 
-    qc_native = transpile(qc, basis_gates=_resolve_basis_gates(problem), optimization_level=3)
+    qc_native = transpile(qc, **_resolve_transpile_args(problem, backend_info), optimization_level=3)
     return qasm3_dumps(qc_native), shots, params
 
 
