@@ -35,5 +35,5 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build
+      - name: Test
         run: mvn --batch-mode test
