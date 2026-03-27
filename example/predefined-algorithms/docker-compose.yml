@@ -21,7 +21,6 @@ services:
     ports:
       - "5000:5000"
     environment:
-      CIRCUIT_GENERATOR_URL: "http://quantum-circuit-generator:5073"
       OBJECTIVE_EVAL_URL: "http://objective-evaluation-service:5072"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
@@ -29,13 +28,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # QAOA only – circuit generation backend (https://github.com/UST-QuAntiL/quantum-circuit-generator)
-  quantum-circuit-generator:
-    image: planqk/quantum-circuit-generator:latest
-    ports:
-      - "5073:5073"
-    profiles: ["qaoa"]
 
   # QAOA only – objective evaluation backend (https://github.com/UST-QuAntiL/objective-evaluation-service)
   objective-evaluation-service:

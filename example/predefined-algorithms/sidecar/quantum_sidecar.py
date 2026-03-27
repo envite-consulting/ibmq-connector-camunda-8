@@ -9,15 +9,13 @@ Run:
     python quantum_sidecar.py
 
 Environment variables:
-    CIRCUIT_GENERATOR_URL   Base URL of the quantum-circuit-generator service
-                            (default: http://quantum-circuit-generator:5073)
     OBJECTIVE_EVAL_URL      Base URL of the objective-evaluation-service
                             (default: http://objective-evaluation-service:5072)
 
 Endpoints:
     POST /generate-circuit   Builds a quantum circuit from classical problem parameters.
                              Grover: uses Qiskit locally.
-                             QAOA:   delegates to quantum-circuit-generator.
+                             QAOA:   uses Qiskit locally.
     POST /process-results    Post-processes raw Qiskit Runtime Sampler results.
                              Grover: extracts the most frequent bitstring locally.
                              QAOA:   extracts counts, then delegates to objective-evaluation-service.
@@ -32,9 +30,6 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-CIRCUIT_GENERATOR_URL = os.environ.get(
-    "CIRCUIT_GENERATOR_URL", "http://quantum-circuit-generator:5073"
-)
 OBJECTIVE_EVAL_URL = os.environ.get(
     "OBJECTIVE_EVAL_URL", "http://objective-evaluation-service:5072"
 )
@@ -108,45 +103,59 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
 
 def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int, list]:
     """
-    Delegate circuit generation to the quantum-circuit-generator service.
+    Build a QAOA MaxCut circuit using Qiskit and return it as OpenQASM 3.
 
-    POST /algorithms/qaoa/maxcut
-    The service accepts:
-        adj_matrix      – 2-D list of floats (graph adjacency matrix)
-        p               – QAOA depth (number of layers)
-        circuit_format  – "openqasm2"
-        parameters      – optional list [gamma_0, ..., gamma_{p-1}, beta_0, ..., beta_{p-1}]
+    The circuit is transpiled to native basis gates — the IBM Quantum REST API does
+    not transpile circuits server-side.
 
-    Returns (circuit, shots, used_params).
-    used_params is the parameter list that was sent to the circuit generator so the
-    BPMN workflow can store it as currentParams for the first SPSA iteration.
+    problem fields:
+        adj_matrix  – 2-D list of floats representing the graph
+        p           – QAOA depth / number of layers (default 1)
+        shots       – number of circuit repetitions (default 1024)
     """
     import json as _json
+    from qiskit import QuantumCircuit
+    from qiskit.compiler import transpile
+    from qiskit.qasm3 import dumps
 
     adj_matrix = problem["adj_matrix"]
     if isinstance(adj_matrix, str):
         adj_matrix = _json.loads(adj_matrix)
 
-    p = int(problem.get("p", 1))
+    p     = int(problem.get("p", 1))
+    shots = int(problem.get("shots", 1024))
 
     if not params:
         params = [0.5] * (2 * p)
 
-    payload = {
-        "adj_matrix":     adj_matrix,
-        "p":              p,
-        "circuit_format": "openqasm2",
-        "parameters":     params,
-    }
+    n     = len(adj_matrix)
+    edges = [
+        (i, j, float(adj_matrix[i][j]))
+        for i in range(n)
+        for j in range(i + 1, n)
+        if adj_matrix[i][j] != 0
+    ]
 
-    resp = http.post(
-        f"{CIRCUIT_GENERATOR_URL}/algorithms/qaoa/maxcut",
-        json=payload,
-        timeout=30,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    return data["circuit"], int(problem.get("shots", 1024)), params
+    qc = QuantumCircuit(n, n)
+    qc.h(range(n))
+
+    for layer in range(p):
+        gamma = float(params[layer])
+        beta  = float(params[p + layer])
+
+        # Cost layer: RZZ(2γw) for each weighted edge
+        for i, j, w in edges:
+            qc.rzz(2.0 * gamma * w, i, j)
+
+        # Mixer layer: RX(2β) on each qubit
+        for i in range(n):
+            qc.rx(2.0 * beta, i)
+
+    qc.measure(range(n), range(n))
+
+    basis_gates = ["id", "rx", "rz", "sx", "x", "cz"]
+    qc_native   = transpile(qc, basis_gates=basis_gates, optimization_level=3)
+    return dumps(qc_native), shots, params
 
 
 # ─── /process-results ─────────────────────────────────────────────────────────
