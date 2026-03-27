@@ -62,7 +62,7 @@
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="generateCircuitResult" />
           <zeebe:header key="resultExpression" value="= {circuit: response.body.circuit, shots: response.body.shots}" />
-          <zeebe:header key="errorExpression" value="= bpmnError(&quot;SIDECAR_ERROR&quot;, (if error.code != null then string(error.code) else &quot;UNREACHABLE&quot;) + &quot; – &quot; + (if error.message != null then error.message else &quot;Could not reach sidecar&quot;))" />
+          <zeebe:header key="errorExpression" value="= if error.code != null then bpmnError(&quot;SIDECAR_ERROR&quot;, string(error.code) + &quot; – &quot; + (if error.message != null then error.message else &quot;Could not reach sidecar&quot;)) else null" />
         </zeebe:taskHeaders>
         <zeebe:ioMapping>
           <zeebe:input source="= sidecarUrl + &quot;/generate-circuit&quot;" target="url" />
@@ -191,7 +191,7 @@
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="processResultsOutput" />
           <zeebe:header key="resultExpression" value="= {classicalResult: response.body}" />
-          <zeebe:header key="errorExpression" value="= bpmnError(&quot;SIDECAR_ERROR&quot;, (if error.code != null then string(error.code) else &quot;UNREACHABLE&quot;) + &quot; – &quot; + (if error.message != null then error.message else &quot;Could not reach sidecar&quot;))" />
+          <zeebe:header key="errorExpression" value="= if error.code != null then bpmnError(&quot;SIDECAR_ERROR&quot;, string(error.code) + &quot; – &quot; + (if error.message != null then error.message else &quot;Could not reach sidecar&quot;)) else null" />
         </zeebe:taskHeaders>
         <zeebe:ioMapping>
           <zeebe:input source="= sidecarUrl + &quot;/process-results&quot;" target="url" />
