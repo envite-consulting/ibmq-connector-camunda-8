@@ -343,6 +343,8 @@ def optimize():
                    → sidecar computes ĝ = (f_plus−f_minus)/(2·c_k·Δ_k)
                       and returns θ_{k+1} = θ_k − a_k·ĝ  [phase: step]
     """
+    import json as _json
+
     data            = request.get_json(force=True)
     algorithm       = data.get("algorithm", "spsa")
     iteration       = int(data.get("iteration", 0))
@@ -351,12 +353,20 @@ def optimize():
     best_bitstring  = data.get("best_bitstring")
     optimizer_state = data.get("optimizer_state") or {}
     hyperparams     = data.get("hyperparams") or {}
+    problem         = data.get("problem") or {}
 
     if algorithm != "spsa":
         return jsonify({"error": f"Unsupported optimizer: {algorithm}"}), 400
 
     result = _spsa_step(iteration, current_params, objective_value,
                         best_bitstring, optimizer_state, hyperparams)
+
+    if result.get("converged") and result.get("best_partition"):
+        adj_matrix = problem.get("adj_matrix", [])
+        if isinstance(adj_matrix, str):
+            adj_matrix = _json.loads(adj_matrix)
+        result["best_cut_weight"] = _maxcut_value(result["best_partition"], adj_matrix)
+
     return jsonify(result)
 
 

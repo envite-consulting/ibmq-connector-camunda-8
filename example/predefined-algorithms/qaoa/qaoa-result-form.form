@@ -7,14 +7,21 @@
       "type": "textfield",
       "key": "bestPartition",
       "label": "Best Partition",
-      "description": "Bitstring encoding the optimal node partition found. Each character is a node: '0' = partition A, '1' = partition B. E.g. '1010' puts nodes 0,2 in B and nodes 1,3 in A.",
+      "description": "Bitstring encoding the optimal node partition found. Each character is a node: '0' = partition A, '1' = partition B. E.g. '0110' puts nodes 1,2 in B and nodes 0,3 in A.",
+      "readonly": true
+    },
+    {
+      "type": "number",
+      "key": "bestCutWeight",
+      "label": "Best Cut Weight",
+      "description": "Actual MaxCut value of the best partition — the total weight of edges crossing between the two node sets. Higher is better.",
       "readonly": true
     },
     {
       "type": "number",
       "key": "objectiveValue",
-      "label": "Best Cut Weight",
-      "description": "Max-Cut weight of the best partition found (higher is better). Reported as a negative value internally by the optimizer.",
+      "label": "SPSA Objective Value",
+      "description": "Expected cut weight averaged over all measured bitstrings (negative, as SPSA minimizes). Lower (more negative) is better. May differ from the Best Cut Weight, which is the single best bitstring observed.",
       "readonly": true
     },
     {

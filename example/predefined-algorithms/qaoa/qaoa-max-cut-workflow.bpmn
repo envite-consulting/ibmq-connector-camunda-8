@@ -136,7 +136,7 @@
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="optimizeResult" />
-          <zeebe:header key="resultExpression" value="= {converged: response.body.converged, convergenceReason: if response.body.converged then response.body.convergence_reason else null, iteration: response.body.iteration, optimizerState: if response.body.converged then {} else response.body.optimizer_state, currentParams: if response.body.converged then response.body.optimal_params else response.body.next_params, optimalParams: response.body.optimal_params, objectiveValue: response.body.objective_value, bestPartition: response.body.best_partition}" />
+          <zeebe:header key="resultExpression" value="= {converged: response.body.converged, convergenceReason: if response.body.converged then response.body.convergence_reason else null, iteration: response.body.iteration, optimizerState: if response.body.converged then {} else response.body.optimizer_state, currentParams: if response.body.converged then response.body.optimal_params else response.body.next_params, optimalParams: response.body.optimal_params, objectiveValue: response.body.objective_value, bestPartition: response.body.best_partition, bestCutWeight: response.body.best_cut_weight}" />
           <zeebe:header key="errorExpression" value="= if error.code != null then bpmnError(&#34;SIDECAR_ERROR&#34;, string(error.code) + &#34; – &#34; + (if error.message != null then error.message else &#34;Could not reach sidecar&#34;)) else null" />
         </zeebe:taskHeaders>
         <zeebe:ioMapping>

@@ -123,13 +123,13 @@ Start Form → Generate Circuit → Submit Job → [Poll Loop] → Evaluate Resu
 
 | Step | Component | What it does |
 |---|---|---|
-| Start Form | Camunda Form | Collects `problem` (adj_matrix JSON, p, shots), `sidecarUrl`, IBM Quantum credentials |
+| Start Form | Camunda Form | Collects `problem` (adj_matrix JSON, p, shots), `maxIterations`, `sidecarUrl`, IBM Quantum credentials; initialises `iteration = 0` |
 | Generate Circuit | HTTP Connector → Sidecar `/generate-circuit` | Builds and transpiles a QAOA MaxCut circuit using Qiskit; backend properties (basis gates, coupling map) are auto-fetched from IBM Quantum; returns `circuit` (OpenQASM 3), `shots`, and the `currentParams` used |
 | Submit Job | IBM Quantum Connector (`SUBMIT_JOB`) | Submits the circuit to the selected IBM Quantum backend; returns `ibmqJobId` |
 | Poll Loop | Timer + IBM Quantum Connector (`GET_JOB_RESULT`) | Waits 30 s, checks job status, loops until terminal state |
-| Evaluate Results | HTTP Connector → Sidecar `/process-results` | Extracts bitstring counts, delegates to the objective-evaluation-service; returns `objectiveValue` (negative MaxCut weight) |
-| SPSA Optimize | HTTP Connector → Sidecar `/optimize` | Runs one stateless SPSA step; returns `converged`, `next_params`/`optimal_params`, and the opaque `optimizer_state` |
-| Review Result | User Task | Presents `objectiveValue`, `iteration`, and the last job URL |
+| Evaluate Results | HTTP Connector → Sidecar `/process-results` | Extracts bitstring counts, delegates to the objective-evaluation-service; returns `objectiveValue` (expectation value) and `currentBestBitstring` (highest cut-weight bitstring from this iteration's measurements) |
+| SPSA Optimize | HTTP Connector → Sidecar `/optimize` | Runs one stateless SPSA step; tracks the best bitstring seen across all iterations; returns `converged`, `convergenceReason`, `next_params`/`optimal_params`, `bestPartition`, `bestCutWeight`, and the opaque `optimizer_state` |
+| Review Result | User Task | Presents `bestPartition`, `bestCutWeight`, `objectiveValue`, `convergenceReason`, `iteration`, and the last job URL |
 
 ### SPSA loop mechanics
 
@@ -149,22 +149,27 @@ The `optimizer_state` blob returned by each `/optimize` call is passed back unch
 |---|---|---|
 | `problem` | Start form | Generate Circuit, Evaluate Results, Optimize |
 | `sidecarUrl` | Start form | Generate Circuit, Evaluate Results, Optimize |
+| `maxIterations` | Start form | Optimize |
 | `apiKey` | Start form | Generate Circuit, Submit Job, Check Job |
 | `ibmqUrl` | Start form | Submit Job, Check Job |
 | `ibmqInstance` | Start form | Generate Circuit, Submit Job, Check Job |
 | `backend` | Start form | Generate Circuit, Submit Job |
+| `iteration` | Start event (initialised to `0`), Optimize (incremented) | Optimize, result form |
 | `circuit` | Generate Circuit | Submit Job |
 | `shots` | Generate Circuit | Submit Job |
 | `currentParams` | Generate Circuit (first call), Optimize (subsequent calls) | Generate Circuit, Optimize |
 | `ibmqJobId` | Submit Job | Check Job |
 | `ibmqStatus` | Check Job | Poll gateway |
 | `ibmqResult` | Check Job | Evaluate Results |
-| `objectiveValue` | Evaluate Results | Optimize |
+| `objectiveValue` | Evaluate Results (expectation value), Optimize (echoed each step) | Optimize |
+| `currentBestBitstring` | Evaluate Results | Optimize |
 | `counts` | Evaluate Results | (available for inspection) |
-| `iteration` | Optimize | Optimize (next call), result form |
 | `converged` | Optimize | Convergence gateway |
+| `convergenceReason` | Optimize (on convergence) | Result form |
 | `optimizerState` | Optimize | Optimize (next call) |
 | `optimalParams` | Optimize (on convergence) | (available for inspection) |
+| `bestPartition` | Optimize (on convergence) | Result form |
+| `bestCutWeight` | Optimize (on convergence) | Result form |
 
 ### Running the example
 
@@ -175,9 +180,9 @@ The `optimizer_state` blob returned by each `/optimize` call is passed back unch
    cd example/predefined-algorithms
    docker compose --profile qaoa up --build
    ```
-   The `--profile qaoa` flag additionally starts the [`objective-evaluation-service`](https://github.com/UST-QuAntiL/objective-evaluation-service) (port 5072), which the sidecar delegates QAOA objective evaluation to. Circuit generation is handled locally by the sidecar using Qiskit, with backend properties (basis gates, coupling map) auto-fetched from IBM Quantum at runtime. The objective-evaluation-service is not needed for the Grover example.
+   The `--profile qaoa` flag additionally starts the [`objective-evaluation-service`](https://github.com/UST-QuAntiL/objective-evaluation-service) (port 5072), which the sidecar delegates QAOA objective evaluation to. Circuit generation is handled locally by the sidecar using Qiskit, with backend properties (basis gates, coupling map) auto-fetched from IBM Quantum at runtime.
 
-2. Deploy the workflow and forms to your Camunda cluster by uploading the files from `example/predefined-algorithms/qaoa/` via the Camunda Web Modeler.
+2. Deploy the workflow and forms to your Camunda cluster by uploading the files from `example/predefined-algorithms/qaoa/`, e.g., via the Camunda Web Modeler.
 
 3. Start a process instance via Camunda Tasklist with the following start form inputs:
 
@@ -190,6 +195,10 @@ The `optimizer_state` blob returned by each `/optimize` call is passed back unch
    | IBM Quantum API Key | `{{secrets.IBMQ_API_KEY}}` |
    | IBM Quantum URL | `https://quantum.cloud.ibm.com/api` |
    | IBM Quantum Instance | `{{secrets.IBMQ_INSTANCE}}` |
-   | Backend | your backend name, e.g. `ibm_brisbane` |
+   | Backend | your backend name, e.g. `ibm_kingston` |
 
-4. The workflow runs multiple IBM Quantum jobs. After the SPSA optimizer converges, a Review user task appears in Tasklist. `objectiveValue` shows the best MaxCut objective found.
+4. The workflow runs multiple IBM Quantum jobs. After the SPSA optimizer converges (or the iteration cap is reached), a Review user task appears in Tasklist showing:
+   - **Best Partition** — bitstring encoding the optimal node partition (e.g. `0110` means nodes 1 and 2 in one set, nodes 0 and 3 in the other)
+   - **Best Cut Weight** — the actual MaxCut value of that partition (total weight of edges crossing the cut)
+   - **SPSA Objective Value** — the expected cut weight averaged over all measured bitstrings; may differ from the best cut weight
+   - **Convergence Reason** — `converged` if the optimizer stabilised, `max_iterations` if the iteration cap was hit (the best partition found is still returned in either case)
