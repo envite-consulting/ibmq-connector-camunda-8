@@ -32,7 +32,7 @@ Follow the steps under [How to Run](#-how-to-run), and then import the file into
     * [Connector Configuration and Output Reference](docs/connector-reference.md)
     * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md)
     * [Example Use Cases & HowTos](docs/usecases.md)
-* 🛠️ [Development & Project Setup](#-development--project-setup)
+* 🛠️ [Development and Project Setup](#️-development-and-project-setup)
 
 ---
 
@@ -98,7 +98,7 @@ Learn how to effectively use the connectors in your processes:
 * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md): Architecture and integration guide for using a Qiskit sidecar to generate quantum circuits from classical problem inputs and post-process measurement results — including support for variational algorithms (VQE, QAOA) with classical optimizer loops.
 * [Example Use Cases & HowTos](docs/usecases.md): End-to-end workflow examples including Grover's Search
 
-## 🛠️ Development & Project Setup
+## 🛠️ Development and Project Setup
 
 ### Project Structure
 
