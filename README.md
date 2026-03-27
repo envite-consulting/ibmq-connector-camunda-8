@@ -111,9 +111,9 @@ src/main/java/de/envite/connector/ibmq/
 ├── IBMQAuthenticator.java          # IBM Cloud IAM token exchange
 ├── IBMQParameterHandler.java       # Circuit input normalisation (OpenQASM / Direct Params)
 ├── IBMQConstants.java              # Shared constants (API paths, headers, program IDs)
-├── HttpHelper.java                 # RestTemplate factory
 ├── dto/                            # Request / response DTOs
 ├── model/                          # Model classes
+├── util/                           # Shared utilities
 └── deployment/                     # Auto-deploys example workflows on startup (optional)
 
 element-templates/                  # Camunda element template (connector UI)

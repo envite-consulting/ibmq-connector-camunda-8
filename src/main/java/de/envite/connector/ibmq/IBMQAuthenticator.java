@@ -12,7 +12,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import static de.envite.connector.ibmq.HttpHelper.requireBody;
+import static de.envite.connector.ibmq.util.HttpHelper.requireBody;
 import static de.envite.connector.ibmq.IBMQConstants.*;
 
 /**
