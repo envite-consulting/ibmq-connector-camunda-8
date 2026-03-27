@@ -1,0 +1,34 @@
+{
+  "id": "qaoa-job-failure-form",
+  "type": "default",
+  "schemaVersion": 12,
+  "components": [
+    {
+      "type": "textfield",
+      "key": "ibmqResult.status",
+      "label": "Job Status",
+      "description": "Terminal status reported by IBM Quantum.",
+      "readonly": true
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqResult.jobId",
+      "label": "Job ID",
+      "readonly": true
+    },
+    {
+      "type": "textfield",
+      "key": "ibmqResult.resultUrl",
+      "label": "IBM Quantum Job URL",
+      "description": "Open this link in the IBM Quantum UI for full error details.",
+      "readonly": true
+    },
+    {
+      "type": "number",
+      "key": "iteration",
+      "label": "Failed at iteration",
+      "description": "SPSA iteration at which the job failed.",
+      "readonly": true
+    }
+  ]
+}
