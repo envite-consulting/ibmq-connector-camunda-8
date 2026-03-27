@@ -10,6 +10,9 @@
     <startEvent id="start" name="MaxCut&#10;problem submitted">
       <extensionElements>
         <zeebe:formDefinition formId="qaoa-input-form" />
+        <zeebe:ioMapping>
+          <zeebe:output source="= 0" target="iteration" />
+        </zeebe:ioMapping>
       </extensionElements>
       <outgoing>to-generate</outgoing>
     </startEvent>
@@ -19,7 +22,7 @@
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="generateCircuitResult" />
-          <zeebe:header key="resultExpression" value="= {circuit: response.body.circuit, shots: response.body.shots, currentParams: response.body.params, iteration: if iteration != null then iteration else 0}" />
+          <zeebe:header key="resultExpression" value="= {circuit: response.body.circuit, shots: response.body.shots, currentParams: response.body.params}" />
           <zeebe:header key="errorExpression" value="= if error.code != null then bpmnError(&#34;SIDECAR_ERROR&#34;, string(error.code) + &#34; – &#34; + (if error.message != null then error.message else &#34;Could not reach sidecar&#34;)) else null" />
         </zeebe:taskHeaders>
         <zeebe:ioMapping>
@@ -133,14 +136,14 @@
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="optimizeResult" />
-          <zeebe:header key="resultExpression" value="= {converged: response.body.converged, iteration: response.body.iteration, optimizerState: if response.body.converged then {} else response.body.optimizer_state, currentParams: if response.body.converged then response.body.optimal_params else response.body.next_params, optimalParams: response.body.optimal_params, objectiveValue: if response.body.converged then response.body.objective_value else objectiveValue}" />
+          <zeebe:header key="resultExpression" value="= {converged: response.body.converged, iteration: response.body.iteration, optimizerState: if response.body.converged then {} else response.body.optimizer_state, currentParams: if response.body.converged then response.body.optimal_params else response.body.next_params, optimalParams: response.body.optimal_params, objectiveValue: if response.body.converged then (if response.body.objective_value != null then response.body.objective_value else objectiveValue) else objectiveValue}" />
           <zeebe:header key="errorExpression" value="= if error.code != null then bpmnError(&#34;SIDECAR_ERROR&#34;, string(error.code) + &#34; – &#34; + (if error.message != null then error.message else &#34;Could not reach sidecar&#34;)) else null" />
         </zeebe:taskHeaders>
         <zeebe:ioMapping>
           <zeebe:input source="= sidecarUrl + &#34;/optimize&#34;" target="url" />
           <zeebe:input source="= &#34;POST&#34;" target="method" />
           <zeebe:input source="= {&#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
-          <zeebe:input source="= {algorithm: &#34;spsa&#34;, iteration: if iteration != null then iteration else 0, problem: problem, current_params: currentParams, objective_value: objectiveValue, optimizer_state: if optimizerState != null then optimizerState else {}}" target="body" />
+          <zeebe:input source="= {algorithm: &#34;spsa&#34;, iteration: if iteration != null then iteration else 0, problem: problem, current_params: currentParams, objective_value: objectiveValue, optimizer_state: if optimizerState != null then optimizerState else {}, hyperparams: {max_iterations: if maxIterations != null then maxIterations else 100}}" target="body" />
         </zeebe:ioMapping>
       </extensionElements>
       <incoming>to-optimize</incoming>

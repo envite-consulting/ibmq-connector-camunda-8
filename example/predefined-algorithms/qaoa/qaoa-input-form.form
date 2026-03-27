@@ -26,6 +26,13 @@
       "defaultValue": 1024
     },
     {
+      "type": "number",
+      "key": "maxIterations",
+      "label": "Max Iterations",
+      "description": "Hard cap on total BPMN loop iterations (= IBM Quantum jobs) before forcing convergence with the best result found so far.",
+      "defaultValue": 30
+    },
+    {
       "type": "separator"
     },
     {

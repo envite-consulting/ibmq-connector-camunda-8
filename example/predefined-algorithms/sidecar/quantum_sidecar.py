@@ -362,20 +362,23 @@ def _spsa_step(
         A          stability constant in step-size sequence (default 10)
         alpha      decay exponent for step size  (default 0.602, SPSA theory optimum)
         gamma      decay exponent for perturbation (default 0.101, SPSA theory optimum)
-        tolerance  min improvement in objective to count as progress (default 1e-3)
-        patience   consecutive non-improving gradient steps before declaring convergence
-                   (default 5)
+        tolerance      min improvement in objective to count as progress (default 1e-3)
+        patience       consecutive non-improving gradient steps before declaring convergence
+                       (default 5)
+        max_iterations hard cap on total BPMN loop iterations before forcing convergence
+                       (default 100)
     """
     params = np.array(current_params, dtype=float)
     phase  = state.get("phase")            # None | "gradient_plus" | "gradient_minus"
 
-    a         = float(hyperparams.get("a",         0.1))
-    c         = float(hyperparams.get("c",         0.1))
-    A         = float(hyperparams.get("A",         10.0))
-    alpha     = float(hyperparams.get("alpha",     0.602))
-    gamma_exp = float(hyperparams.get("gamma",     0.101))
-    tol       = float(hyperparams.get("tolerance", 1e-3))
-    patience  = int(hyperparams.get("patience",    5))
+    a             = float(hyperparams.get("a",             0.1))
+    c             = float(hyperparams.get("c",             0.1))
+    A             = float(hyperparams.get("A",             10.0))
+    alpha         = float(hyperparams.get("alpha",         0.602))
+    gamma_exp     = float(hyperparams.get("gamma",         0.101))
+    tol           = float(hyperparams.get("tolerance",     1e-3))
+    patience      = int(hyperparams.get("patience",        5))
+    max_iterations = int(hyperparams.get("max_iterations", 100))
 
     # ── Convergence check + start new gradient step (phase None or "step") ────
 
@@ -389,7 +392,7 @@ def _spsa_step(
         else:
             no_improve += 1
 
-        if no_improve >= patience and k > 0:
+        if (no_improve >= patience and k > 0) or iteration >= max_iterations:
             return {
                 "converged":      True,
                 "optimal_params": params.tolist(),
