@@ -1,6 +1,6 @@
 # IBM Quantum Connector for Camunda 8 ⚛️
 
-*TODO: slogan 🚀*
+*Run quantum circuits from your BPMN workflow — on real IBM Quantum hardware 🚀*
 
 [![Build](https://github.com/wederbn/ibmq-connector-camunda-8/actions/workflows/build.yml/badge.svg)](https://github.com/wederbn/ibmq-connector-camunda-8/actions/workflows/build.yml)
 [![Compatible with: Camunda Platform 8](https://img.shields.io/badge/Compatible%20with-Camunda%20Platform%208-26d07c)](https://docs.camunda.io/)
