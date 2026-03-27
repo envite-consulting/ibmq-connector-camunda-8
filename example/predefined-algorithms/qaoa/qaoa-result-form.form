@@ -4,10 +4,17 @@
   "schemaVersion": 12,
   "components": [
     {
+      "type": "textfield",
+      "key": "bestPartition",
+      "label": "Best Partition",
+      "description": "Bitstring encoding the optimal node partition found. Each character is a node: '0' = partition A, '1' = partition B. E.g. '1010' puts nodes 0,2 in B and nodes 1,3 in A.",
+      "readonly": true
+    },
+    {
       "type": "number",
       "key": "objectiveValue",
-      "label": "Objective Value",
-      "description": "Best objective value (negative Max-Cut weight) found by the SPSA optimizer. More negative means a larger cut.",
+      "label": "Best Cut Weight",
+      "description": "Max-Cut weight of the best partition found (higher is better). Reported as a negative value internally by the optimizer.",
       "readonly": true
     },
     {

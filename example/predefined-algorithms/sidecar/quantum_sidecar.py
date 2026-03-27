@@ -238,6 +238,16 @@ def _process_grover_results(problem: dict, results: object) -> dict:
     }
 
 
+def _maxcut_value(bitstring: str, adj_matrix: list) -> float:
+    """Sum of edge weights crossing the cut encoded by bitstring."""
+    cut = 0.0
+    for i, row in enumerate(adj_matrix):
+        for j in range(i + 1, len(row)):
+            if bitstring[i] != bitstring[j]:
+                cut += float(row[j])
+    return cut
+
+
 def _process_qaoa_results(problem: dict, results: object) -> dict:
     """
     Extract bitstring counts from Sampler output, then delegate objective
@@ -279,8 +289,11 @@ def _process_qaoa_results(problem: dict, results: object) -> dict:
     resp.raise_for_status()
     data = resp.json()
 
+    best_bitstring = max(counts, key=lambda b: _maxcut_value(b, adj_matrix)) if counts else None
+
     return {
         "objective_value": data["objective_value"],
+        "best_bitstring":  best_bitstring,
         "costs":           data.get("costs", []),
         "counts":          counts,
     }
@@ -335,6 +348,7 @@ def optimize():
     iteration       = int(data.get("iteration", 0))
     current_params  = data.get("current_params", [])
     objective_value = float(data.get("objective_value"))
+    best_bitstring  = data.get("best_bitstring")
     optimizer_state = data.get("optimizer_state") or {}
     hyperparams     = data.get("hyperparams") or {}
 
@@ -342,7 +356,7 @@ def optimize():
         return jsonify({"error": f"Unsupported optimizer: {algorithm}"}), 400
 
     result = _spsa_step(iteration, current_params, objective_value,
-                        optimizer_state, hyperparams)
+                        best_bitstring, optimizer_state, hyperparams)
     return jsonify(result)
 
 
@@ -350,6 +364,7 @@ def _spsa_step(
     iteration: int,
     current_params: list,
     objective_value: float,
+    best_bitstring: str | None,
     state: dict,
     hyperparams: dict,
 ) -> dict:
@@ -383,12 +398,14 @@ def _spsa_step(
     # ── Convergence check + start new gradient step (phase None or "step") ────
 
     if phase is None or phase == "step":
-        best_obj   = state.get("best_objective", float("inf"))
-        no_improve = state.get("no_improve_count", 0)
-        k          = state.get("spsa_k", 0)
+        best_obj      = state.get("best_objective", float("inf"))
+        best_partition = state.get("best_partition")
+        no_improve    = state.get("no_improve_count", 0)
+        k             = state.get("spsa_k", 0)
 
         if objective_value < best_obj - tol:
             best_obj, no_improve = objective_value, 0
+            best_partition = best_bitstring
         else:
             no_improve += 1
 
@@ -398,6 +415,7 @@ def _spsa_step(
                 "convergence_reason": "max_iterations" if iteration >= max_iterations else "converged",
                 "optimal_params":     params.tolist(),
                 "objective_value":    best_obj,
+                "best_partition":     best_partition,
                 "iteration":          iteration,
             }
 
@@ -417,6 +435,7 @@ def _spsa_step(
                 "delta":            delta.tolist(),
                 "theta_k":          params.tolist(),
                 "best_objective":   best_obj,
+                "best_partition":   best_partition,
                 "no_improve_count": no_improve,
             },
         }
@@ -460,6 +479,7 @@ def _spsa_step(
                 "phase":            "step",
                 "spsa_k":           k + 1,
                 "best_objective":   state.get("best_objective", float("inf")),
+                "best_partition":   state.get("best_partition"),
                 "no_improve_count": state.get("no_improve_count", 0),
             },
         }
