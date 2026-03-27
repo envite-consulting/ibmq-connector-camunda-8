@@ -407,6 +407,7 @@ def _spsa_step(
 
         return {
             "converged":       False,
+            "objective_value": objective_value,
             "next_params":     (params + ck * delta).tolist(),
             "iteration":       iteration + 1,
             "optimizer_state": {
@@ -429,6 +430,7 @@ def _spsa_step(
 
         return {
             "converged":       False,
+            "objective_value": objective_value,
             "next_params":     (theta_k - ck * delta).tolist(),
             "iteration":       iteration + 1,
             "optimizer_state": {**state, "phase": "gradient_minus",
@@ -451,6 +453,7 @@ def _spsa_step(
 
         return {
             "converged":       False,
+            "objective_value": objective_value,
             "next_params":     theta_next.tolist(),
             "iteration":       iteration + 1,
             "optimizer_state": {
