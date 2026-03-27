@@ -6,7 +6,7 @@ Each example includes a ready-to-run BPMN workflow, element templates, and setup
 | Example | Algorithm type | Reference                                               |
 |---|---|---------------------------------------------------------|
 | [Grover's Search](#grovers-search) | One-shot | [Grover, 1996](https://arxiv.org/abs/quant-ph/9605043)  |
-| [QAOA / Max-Cut](#qaoa--max-cut) | Variational | [Farhi et al., 2014](https://arxiv.org/abs/1411.4028)   |
+| [QAOA / MaxCut](#qaoa--maxcut) | Variational | [Farhi et al., 2014](https://arxiv.org/abs/1411.4028)   |
 
 ---
 
@@ -96,6 +96,109 @@ Start Form → Generate Circuit → Submit Job → [Poll Loop] → Process Resul
 
 ---
 
-## QAOA / Max-Cut
+## QAOA / MaxCut
 
-TODO
+**Example workflow:** [`example/predefined-algorithms/qaoa/qaoa-max-cut-workflow.bpmn`](../example/predefined-algorithms/qaoa/qaoa-max-cut-workflow.bpmn)
+
+The Quantum Approximate Optimization Algorithm (QAOA) is a variational quantum algorithm for combinatorial optimization problems.
+This example solves the [MaxCut problem](https://en.wikipedia.org/wiki/Maximum_cut): partition the nodes of a graph into two sets to maximize the number of edges crossing the cut.
+It demonstrates the variational quantum algorithm pattern, i.e., the workflow loops, running a quantum circuit and a classical optimizer step on each iteration, until the optimizer converges.
+
+### Problem
+
+Given an undirected weighted graph (adjacency matrix), find the node partition that maximizes the total weight of edges between the two partitions.
+
+### Workflow structure
+
+![QAOA MaxCut workflow](images/qaoa-max-cut-workflow.png)
+
+```
+Start Form → Generate Circuit → Submit Job → [Poll Loop] → Evaluate Results → SPSA Optimize
+                ▲                                                                    │
+                │                                                      not converged │
+                └────────────────────────────────────────────────────────────────────┘
+                                                                           converged ↓
+                                                                               Review Result → End
+```
+
+| Step | Component | What it does |
+|---|---|---|
+| Start Form | Camunda Form | Collects `problem` (adj_matrix JSON, p, shots), `maxIterations`, `sidecarUrl`, IBM Quantum credentials; initialises `iteration = 0` |
+| Generate Circuit | HTTP Connector → Sidecar `/generate-circuit` | Builds and transpiles a QAOA MaxCut circuit using Qiskit; backend properties (basis gates, coupling map) are auto-fetched from IBM Quantum; returns `circuit` (OpenQASM 3), `shots`, and the `currentParams` used |
+| Submit Job | IBM Quantum Connector (`SUBMIT_JOB`) | Submits the circuit to the selected IBM Quantum backend; returns `ibmqJobId` |
+| Poll Loop | Timer + IBM Quantum Connector (`GET_JOB_RESULT`) | Waits 30 s, checks job status, loops until terminal state |
+| Evaluate Results | HTTP Connector → Sidecar `/process-results` | Extracts bitstring counts, delegates to the objective-evaluation-service; returns `objectiveValue` (expectation value) and `currentBestBitstring` (highest cut-weight bitstring from this iteration's measurements) |
+| SPSA Optimize | HTTP Connector → Sidecar `/optimize` | Runs one stateless SPSA step; tracks the best bitstring seen across all iterations; returns `converged`, `convergenceReason`, `next_params`/`optimal_params`, `bestPartition`, `bestCutWeight`, and the opaque `optimizer_state` |
+| Review Result | User Task | Presents `bestPartition`, `bestCutWeight`, `objectiveValue`, `convergenceReason`, `iteration`, and the last job URL |
+
+### SPSA loop mechanics
+
+Each SPSA gradient estimate requires three sequential IBM Quantum jobs, so each "SPSA step" maps to three BPMN loop iterations:
+
+| BPMN iteration | Params evaluated | Sidecar response |
+|---|---|---|
+| k+0 | θ_k | θ_k + c_k·Δ_k (phase: `gradient_plus`) |
+| k+1 | θ_k + c_k·Δ_k | θ_k − c_k·Δ_k (phase: `gradient_minus`) |
+| k+2 | θ_k − c_k·Δ_k | θ_{k+1} = θ_k − a_k·ĝ (phase: `step`) |
+
+The `optimizer_state` blob returned by each `/optimize` call is passed back unchanged on the next call, keeping the sidecar stateless.
+
+### Process variables
+
+| Variable | Set by | Used by |
+|---|---|---|
+| `problem` | Start form | Generate Circuit, Evaluate Results, Optimize |
+| `sidecarUrl` | Start form | Generate Circuit, Evaluate Results, Optimize |
+| `maxIterations` | Start form | Optimize |
+| `apiKey` | Start form | Generate Circuit, Submit Job, Check Job |
+| `ibmqUrl` | Start form | Submit Job, Check Job |
+| `ibmqInstance` | Start form | Generate Circuit, Submit Job, Check Job |
+| `backend` | Start form | Generate Circuit, Submit Job |
+| `iteration` | Start event (initialised to `0`), Optimize (incremented) | Optimize, result form |
+| `circuit` | Generate Circuit | Submit Job |
+| `shots` | Generate Circuit | Submit Job |
+| `currentParams` | Generate Circuit (first call), Optimize (subsequent calls) | Generate Circuit, Optimize |
+| `ibmqJobId` | Submit Job | Check Job |
+| `ibmqStatus` | Check Job | Poll gateway |
+| `ibmqResult` | Check Job | Evaluate Results |
+| `objectiveValue` | Evaluate Results (expectation value), Optimize (echoed each step) | Optimize |
+| `currentBestBitstring` | Evaluate Results | Optimize |
+| `counts` | Evaluate Results | (available for inspection) |
+| `converged` | Optimize | Convergence gateway |
+| `convergenceReason` | Optimize (on convergence) | Result form |
+| `optimizerState` | Optimize | Optimize (next call) |
+| `optimalParams` | Optimize (on convergence) | (available for inspection) |
+| `bestPartition` | Optimize (on convergence) | Result form |
+| `bestCutWeight` | Optimize (on convergence) | Result form |
+
+### Running the example
+
+> **Warning (Camunda SaaS only):** The sidecar must be publicly accessible when using Camunda SaaS. See the [Grover example](#running-the-example) for details on using ngrok during testing.
+
+1. Start the connector, sidecar, and QAOA backend services:
+   ```bash
+   cd example/predefined-algorithms
+   docker compose --profile qaoa up --build
+   ```
+   The `--profile qaoa` flag additionally starts the [`objective-evaluation-service`](https://github.com/UST-QuAntiL/objective-evaluation-service) (port 5072), which the sidecar delegates QAOA objective evaluation to. Circuit generation is handled locally by the sidecar using Qiskit, with backend properties (basis gates, coupling map) auto-fetched from IBM Quantum at runtime.
+
+2. Deploy the workflow and forms to your Camunda cluster by uploading the files from `example/predefined-algorithms/qaoa/`, e.g., via the Camunda Web Modeler.
+
+3. Start a process instance via Camunda Tasklist with the following start form inputs:
+
+   | Field | Example value |
+   |---|---|
+   | Adjacency Matrix | `[[0,1,1,0],[1,0,1,1],[1,1,0,1],[0,1,1,0]]` |
+   | QAOA Depth (p) | `1` |
+   | Shots | `1024` |
+   | Sidecar URL | your public sidecar URL, e.g. `https://xxxx.ngrok.io` |
+   | IBM Quantum API Key | `{{secrets.IBMQ_API_KEY}}` |
+   | IBM Quantum URL | `https://quantum.cloud.ibm.com/api` |
+   | IBM Quantum Instance | `{{secrets.IBMQ_INSTANCE}}` |
+   | Backend | your backend name, e.g. `ibm_kingston` |
+
+4. The workflow runs multiple IBM Quantum jobs. After the SPSA optimizer converges (or the iteration cap is reached), a Review user task appears in Tasklist showing:
+   - **Best Partition** — bitstring encoding the optimal node partition (e.g. `0110` means nodes 1 and 2 in one set, nodes 0 and 3 in the other)
+   - **Best Cut Weight** — the actual MaxCut value of that partition (total weight of edges crossing the cut)
+   - **SPSA Objective Value** — the expected cut weight averaged over all measured bitstrings; may differ from the best cut weight
+   - **Convergence Reason** — `converged` if the optimizer stabilised, `max_iterations` if the iteration cap was hit (the best partition found is still returned in either case)

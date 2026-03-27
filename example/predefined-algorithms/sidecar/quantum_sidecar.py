@@ -9,15 +9,13 @@ Run:
     python quantum_sidecar.py
 
 Environment variables:
-    CIRCUIT_GENERATOR_URL   Base URL of the quantum-circuit-generator service
-                            (default: http://quantum-circuit-generator:5073)
     OBJECTIVE_EVAL_URL      Base URL of the objective-evaluation-service
                             (default: http://objective-evaluation-service:5072)
 
 Endpoints:
     POST /generate-circuit   Builds a quantum circuit from classical problem parameters.
                              Grover: uses Qiskit locally.
-                             QAOA:   delegates to quantum-circuit-generator.
+                             QAOA:   uses Qiskit locally.
     POST /process-results    Post-processes raw Qiskit Runtime Sampler results.
                              Grover: extracts the most frequent bitstring locally.
                              QAOA:   extracts counts, then delegates to objective-evaluation-service.
@@ -29,15 +27,62 @@ import os
 import numpy as np
 import requests as http
 from flask import Flask, request, jsonify
+from qiskit import QuantumCircuit
+from qiskit.compiler import transpile
+from qiskit.qasm3 import dumps as qasm3_dumps
+from qiskit_ibm_runtime import QiskitRuntimeService
 
 app = Flask(__name__)
 
-CIRCUIT_GENERATOR_URL = os.environ.get(
-    "CIRCUIT_GENERATOR_URL", "http://quantum-circuit-generator:5073"
-)
 OBJECTIVE_EVAL_URL = os.environ.get(
     "OBJECTIVE_EVAL_URL", "http://objective-evaluation-service:5072"
 )
+
+
+# ─── Shared circuit helpers ───────────────────────────────────────────────────
+
+_DEFAULT_BASIS_GATES = ["id", "rz", "sx", "x", "ecr"]
+
+_backend_cache: dict = {}
+
+
+def _get_ibm_backend(api_key: str, ibmq_instance: str, backend_name: str):
+    """Fetch and cache the IBM Quantum backend object via Qiskit IBM Runtime."""
+    cache_key = (ibmq_instance, backend_name)
+    if cache_key not in _backend_cache:
+        service = QiskitRuntimeService(
+            channel="ibm_cloud",
+            token=api_key,
+            instance=ibmq_instance,
+        )
+        _backend_cache[cache_key] = service.backend(backend_name)
+    return _backend_cache[cache_key]
+
+
+def _resolve_transpile_args(problem: dict, backend_info: dict) -> dict:
+    """Return kwargs for Qiskit transpile().
+
+    Priority:
+    1. problem.basis_gates – explicit user override (comma-separated string or list)
+    2. IBM Quantum backend object – auto-fetched via backend_info credentials;
+       lets Qiskit handle basis_gates, coupling_map, and all other constraints
+    3. _DEFAULT_BASIS_GATES fallback
+    """
+    raw = problem.get("basis_gates") or None
+    if raw is not None:
+        gates = [g.strip() for g in raw.split(",") if g.strip()] if isinstance(raw, str) else raw
+        return {"basis_gates": gates}
+
+    api_key  = backend_info.get("api_key")
+    instance = backend_info.get("ibmq_instance")
+    backend  = backend_info.get("backend")
+    if api_key and instance and backend:
+        try:
+            return {"backend": _get_ibm_backend(api_key, instance, backend)}
+        except Exception as exc:
+            app.logger.warning("Could not fetch IBM backend %s: %s", backend, exc)
+
+    return {"basis_gates": _DEFAULT_BASIS_GATES}
 
 
 # ─── /generate-circuit ────────────────────────────────────────────────────────
@@ -48,19 +93,24 @@ def generate_circuit():
     algorithm = data.get("algorithm", "grover")
     problem   = data.get("problem", {})
     params    = data.get("params")          # current variational params (QAOA only)
+    backend_info = {
+        "api_key":       data.get("apiKey"),
+        "ibmq_instance": data.get("ibmqInstance"),
+        "backend":       data.get("backend"),
+    }
 
     if algorithm == "grover":
-        circuit, shots = _generate_grover_circuit(problem)
+        circuit, shots = _generate_grover_circuit(problem, backend_info)
         return jsonify({"circuit": circuit, "shots": shots})
 
     if algorithm == "qaoa":
-        circuit, shots = _generate_qaoa_circuit(problem, params)
-        return jsonify({"circuit": circuit, "shots": shots})
+        circuit, shots, used_params = _generate_qaoa_circuit(problem, params, backend_info)
+        return jsonify({"circuit": circuit, "shots": shots, "params": used_params})
 
     return jsonify({"error": f"Unsupported algorithm: {algorithm}"}), 400
 
 
-def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
+def _generate_grover_circuit(problem: dict, backend_info: dict) -> tuple[str, int]:
     """
     Build a Grover's search circuit using Qiskit and return it as OpenQASM 3.
 
@@ -72,23 +122,13 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     problem fields:
         target      – bitstring to search for, e.g. "11" (default "11")
         shots       – number of circuit repetitions (default 1024)
-        basis_gates – list of native gate names for the target backend
-                      (default ["id", "rz", "sx", "x", "ecr"])
+        basis_gates – see _resolve_basis_gates()
     """
-    from qiskit import QuantumCircuit
     from qiskit.circuit.library import PhaseOracle, GroverOperator
-    from qiskit.compiler import transpile
-    from qiskit.qasm3 import dumps
 
-    target:          str  = problem.get("target", "11")
-    shots:           int  = int(problem.get("shots", 1024))
-    basis_gates_raw        = problem.get("basis_gates") or None
-    if basis_gates_raw is None:
-        basis_gates: list = ["id", "rx", "rz", "sx", "x", "cz"]
-    elif isinstance(basis_gates_raw, str):
-        basis_gates = [g.strip() for g in basis_gates_raw.split(",") if g.strip()]
-    else:
-        basis_gates = basis_gates_raw
+    target:         str  = problem.get("target", "11")
+    shots:          int  = int(problem.get("shots", 1024))
+    transpile_args: dict = _resolve_transpile_args(problem, backend_info)
     n = len(target)
 
     expr = " & ".join(
@@ -102,39 +142,62 @@ def _generate_grover_circuit(problem: dict) -> tuple[str, int]:
     qc.compose(grover_op, inplace=True)
     qc.measure(range(n), range(n))
 
-    qc_native = transpile(qc, basis_gates=basis_gates, optimization_level=3)
-    return dumps(qc_native), shots
+    qc_native = transpile(qc, **transpile_args, optimization_level=3)
+    return qasm3_dumps(qc_native), shots
 
 
-def _generate_qaoa_circuit(problem: dict, params: list | None) -> tuple[str, int]:
+def _generate_qaoa_circuit(problem: dict, params: list | None, backend_info: dict) -> tuple[str, int, list]:
     """
-    Delegate circuit generation to the quantum-circuit-generator service.
+    Build a QAOA MaxCut circuit using Qiskit and return it as OpenQASM 3.
 
-    POST /algorithms/qaoa/maxcut
-    The service accepts:
-        adj_matrix      – 2-D list of floats (graph adjacency matrix)
-        p               – QAOA depth (number of layers)
-        circuit_format  – "openqasm2"
-        parameters      – optional list [gamma_0, ..., gamma_{p-1}, beta_0, ..., beta_{p-1}]
+    The circuit is transpiled to native basis gates — the IBM Quantum REST API does
+    not transpile circuits server-side.
 
-    Returns OpenQASM 2.0 circuit string.
+    problem fields:
+        adj_matrix  – 2-D list of floats representing the graph
+        p           – QAOA depth / number of layers (default 1)
+        shots       – number of circuit repetitions (default 1024)
+        basis_gates – see _resolve_basis_gates()
     """
-    payload = {
-        "adj_matrix":     problem["adj_matrix"],
-        "p":              problem.get("p", 1),
-        "circuit_format": "openqasm2",
-    }
-    if params:
-        payload["parameters"] = params
+    import json as _json
 
-    resp = http.post(
-        f"{CIRCUIT_GENERATOR_URL}/algorithms/qaoa/maxcut",
-        json=payload,
-        timeout=30,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    return data["circuit"], int(problem.get("shots", 1024))
+    adj_matrix = problem["adj_matrix"]
+    if isinstance(adj_matrix, str):
+        adj_matrix = _json.loads(adj_matrix)
+
+    p     = int(problem.get("p", 1))
+    shots = int(problem.get("shots", 1024))
+
+    if not params:
+        params = [0.5] * (2 * p)
+
+    n     = len(adj_matrix)
+    edges = [
+        (i, j, float(adj_matrix[i][j]))
+        for i in range(n)
+        for j in range(i + 1, n)
+        if adj_matrix[i][j] != 0
+    ]
+
+    qc = QuantumCircuit(n, n)
+    qc.h(range(n))
+
+    for layer in range(p):
+        gamma = float(params[layer])
+        beta  = float(params[p + layer])
+
+        # Cost layer: RZZ(2γw) for each weighted edge
+        for i, j, w in edges:
+            qc.rzz(2.0 * gamma * w, i, j)
+
+        # Mixer layer: RX(2β) on each qubit
+        for i in range(n):
+            qc.rx(2.0 * beta, i)
+
+    qc.measure(range(n), range(n))
+
+    qc_native = transpile(qc, **_resolve_transpile_args(problem, backend_info), optimization_level=3)
+    return qasm3_dumps(qc_native), shots, params
 
 
 # ─── /process-results ─────────────────────────────────────────────────────────
@@ -175,6 +238,16 @@ def _process_grover_results(problem: dict, results: object) -> dict:
     }
 
 
+def _maxcut_value(bitstring: str, adj_matrix: list) -> float:
+    """Sum of edge weights crossing the cut encoded by bitstring."""
+    cut = 0.0
+    for i, row in enumerate(adj_matrix):
+        for j in range(i + 1, len(row)):
+            if bitstring[i] != bitstring[j]:
+                cut += float(row[j])
+    return cut
+
+
 def _process_qaoa_results(problem: dict, results: object) -> dict:
     """
     Extract bitstring counts from Sampler output, then delegate objective
@@ -192,11 +265,17 @@ def _process_qaoa_results(problem: dict, results: object) -> dict:
         objective_value  – scalar (negative cut weight for minimisation)
         costs            – per-bitstring cost breakdown
     """
+    import json as _json
+
+    adj_matrix = problem["adj_matrix"]
+    if isinstance(adj_matrix, str):
+        adj_matrix = _json.loads(adj_matrix)
+
     counts = _extract_counts(results)
 
     payload = {
         "counts":                counts,
-        "adj_matrix":            problem["adj_matrix"],
+        "adj_matrix":            adj_matrix,
         "objFun":                problem.get("objFun", "expectation"),
         "objFun_hyperparameters": problem.get("objFun_hyperparameters", {}),
         "visualization":         False,
@@ -210,8 +289,11 @@ def _process_qaoa_results(problem: dict, results: object) -> dict:
     resp.raise_for_status()
     data = resp.json()
 
+    best_bitstring = max(counts, key=lambda b: _maxcut_value(b, adj_matrix)) if counts else None
+
     return {
         "objective_value": data["objective_value"],
+        "best_bitstring":  best_bitstring,
         "costs":           data.get("costs", []),
         "counts":          counts,
     }
@@ -261,19 +343,30 @@ def optimize():
                    → sidecar computes ĝ = (f_plus−f_minus)/(2·c_k·Δ_k)
                       and returns θ_{k+1} = θ_k − a_k·ĝ  [phase: step]
     """
+    import json as _json
+
     data            = request.get_json(force=True)
     algorithm       = data.get("algorithm", "spsa")
     iteration       = int(data.get("iteration", 0))
     current_params  = data.get("current_params", [])
     objective_value = float(data.get("objective_value"))
+    best_bitstring  = data.get("best_bitstring")
     optimizer_state = data.get("optimizer_state") or {}
     hyperparams     = data.get("hyperparams") or {}
+    problem         = data.get("problem") or {}
 
     if algorithm != "spsa":
         return jsonify({"error": f"Unsupported optimizer: {algorithm}"}), 400
 
     result = _spsa_step(iteration, current_params, objective_value,
-                        optimizer_state, hyperparams)
+                        best_bitstring, optimizer_state, hyperparams)
+
+    if result.get("converged") and result.get("best_partition"):
+        adj_matrix = problem.get("adj_matrix", [])
+        if isinstance(adj_matrix, str):
+            adj_matrix = _json.loads(adj_matrix)
+        result["best_cut_weight"] = _maxcut_value(result["best_partition"], adj_matrix)
+
     return jsonify(result)
 
 
@@ -281,6 +374,7 @@ def _spsa_step(
     iteration: int,
     current_params: list,
     objective_value: float,
+    best_bitstring: str | None,
     state: dict,
     hyperparams: dict,
 ) -> dict:
@@ -293,39 +387,46 @@ def _spsa_step(
         A          stability constant in step-size sequence (default 10)
         alpha      decay exponent for step size  (default 0.602, SPSA theory optimum)
         gamma      decay exponent for perturbation (default 0.101, SPSA theory optimum)
-        tolerance  min improvement in objective to count as progress (default 1e-3)
-        patience   consecutive non-improving gradient steps before declaring convergence
-                   (default 5)
+        tolerance      min improvement in objective to count as progress (default 1e-3)
+        patience       consecutive non-improving gradient steps before declaring convergence
+                       (default 5)
+        max_iterations hard cap on total BPMN loop iterations before forcing convergence
+                       (default 100)
     """
     params = np.array(current_params, dtype=float)
     phase  = state.get("phase")            # None | "gradient_plus" | "gradient_minus"
 
-    a         = float(hyperparams.get("a",         0.1))
-    c         = float(hyperparams.get("c",         0.1))
-    A         = float(hyperparams.get("A",         10.0))
-    alpha     = float(hyperparams.get("alpha",     0.602))
-    gamma_exp = float(hyperparams.get("gamma",     0.101))
-    tol       = float(hyperparams.get("tolerance", 1e-3))
-    patience  = int(hyperparams.get("patience",    5))
+    a             = float(hyperparams.get("a",             0.1))
+    c             = float(hyperparams.get("c",             0.1))
+    A             = float(hyperparams.get("A",             10.0))
+    alpha         = float(hyperparams.get("alpha",         0.602))
+    gamma_exp     = float(hyperparams.get("gamma",         0.101))
+    tol           = float(hyperparams.get("tolerance",     1e-3))
+    patience      = int(hyperparams.get("patience",        5))
+    max_iterations = int(hyperparams.get("max_iterations", 100))
 
     # ── Convergence check + start new gradient step (phase None or "step") ────
 
     if phase is None or phase == "step":
-        best_obj   = state.get("best_objective", float("inf"))
-        no_improve = state.get("no_improve_count", 0)
-        k          = state.get("spsa_k", 0)
+        best_obj      = state.get("best_objective", float("inf"))
+        best_partition = state.get("best_partition")
+        no_improve    = state.get("no_improve_count", 0)
+        k             = state.get("spsa_k", 0)
 
         if objective_value < best_obj - tol:
             best_obj, no_improve = objective_value, 0
+            best_partition = best_bitstring
         else:
             no_improve += 1
 
-        if no_improve >= patience and k > 0:
+        if (no_improve >= patience and k > 0) or iteration >= max_iterations:
             return {
-                "converged":      True,
-                "optimal_params": params.tolist(),
-                "objective_value": best_obj,
-                "iteration":      iteration,
+                "converged":          True,
+                "convergence_reason": "max_iterations" if iteration >= max_iterations else "converged",
+                "optimal_params":     params.tolist(),
+                "objective_value":    best_obj,
+                "best_partition":     best_partition,
+                "iteration":          iteration,
             }
 
         # Generate Rademacher perturbation vector
@@ -334,6 +435,7 @@ def _spsa_step(
 
         return {
             "converged":       False,
+            "objective_value": objective_value,
             "next_params":     (params + ck * delta).tolist(),
             "iteration":       iteration + 1,
             "optimizer_state": {
@@ -343,6 +445,7 @@ def _spsa_step(
                 "delta":            delta.tolist(),
                 "theta_k":          params.tolist(),
                 "best_objective":   best_obj,
+                "best_partition":   best_partition,
                 "no_improve_count": no_improve,
             },
         }
@@ -356,6 +459,7 @@ def _spsa_step(
 
         return {
             "converged":       False,
+            "objective_value": objective_value,
             "next_params":     (theta_k - ck * delta).tolist(),
             "iteration":       iteration + 1,
             "optimizer_state": {**state, "phase": "gradient_minus",
@@ -378,12 +482,14 @@ def _spsa_step(
 
         return {
             "converged":       False,
+            "objective_value": objective_value,
             "next_params":     theta_next.tolist(),
             "iteration":       iteration + 1,
             "optimizer_state": {
                 "phase":            "step",
                 "spsa_k":           k + 1,
                 "best_objective":   state.get("best_objective", float("inf")),
+                "best_partition":   state.get("best_partition"),
                 "no_improve_count": state.get("no_improve_count", 0),
             },
         }

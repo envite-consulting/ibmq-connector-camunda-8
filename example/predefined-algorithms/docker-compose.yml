@@ -11,16 +11,37 @@ services:
     depends_on:
       quantum-sidecar:
         condition: service_healthy
-    restart: on-failure
+    restart: unless-stopped
+    healthcheck:
+      # Checks the connector's own Spring Boot Actuator endpoint, which includes
+      # a Zeebe health indicator that verifies the gRPC connection to Camunda SaaS.
+      # If Camunda is unreachable the indicator reports DOWN, curl -f fails, and
+      # Docker restarts the container after 3 consecutive failures (~90 s).
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   # Quantum Algorithm Sidecar – Flask service for circuit generation and result processing
+  # For Grover: no additional dependencies.
+  # For QAOA: start with --profile qaoa to also bring up the circuit generator and objective evaluator.
   quantum-sidecar:
     build: ./sidecar
     ports:
       - "5000:5000"
+    environment:
+      OBJECTIVE_EVAL_URL: "http://objective-evaluation-service:5072"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  # QAOA only – objective evaluation backend (https://github.com/UST-QuAntiL/objective-evaluation-service)
+  objective-evaluation-service:
+    image: planqk/objective-evaluation-service:latest
+    ports:
+      - "5072:5072"
+    profiles: ["qaoa"]

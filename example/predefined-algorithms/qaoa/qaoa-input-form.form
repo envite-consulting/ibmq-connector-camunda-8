@@ -1,22 +1,36 @@
 {
-  "id": "grover-input-form",
+  "id": "qaoa-input-form",
   "type": "default",
   "schemaVersion": 12,
   "components": [
     {
-      "type": "textfield",
-      "key": "problem.target",
-      "label": "Target Bitstring",
-      "description": "Bitstring to search for, e.g. \"11\" searches a 2-qubit space, \"101\" a 3-qubit space.",
-      "defaultValue": "11",
+      "type": "textarea",
+      "key": "problem.adj_matrix",
+      "label": "Adjacency Matrix (JSON)",
+      "description": "2-D list of floats representing the graph. Example: 4-node graph with 5 edges.",
+      "defaultValue": "[[0,1,1,0],[1,0,1,1],[1,1,0,1],[0,1,1,0]]",
       "validate": { "required": true }
+    },
+    {
+      "type": "number",
+      "key": "problem.p",
+      "label": "QAOA Depth (p)",
+      "description": "Number of QAOA layers. Higher p can improve solution quality at the cost of a deeper circuit.",
+      "defaultValue": 1
     },
     {
       "type": "number",
       "key": "problem.shots",
       "label": "Shots",
-      "description": "Number of circuit repetitions.",
+      "description": "Number of circuit repetitions per IBM Quantum job.",
       "defaultValue": 1024
+    },
+    {
+      "type": "number",
+      "key": "maxIterations",
+      "label": "Max Iterations",
+      "description": "Hard cap on total BPMN loop iterations (= IBM Quantum jobs) before forcing convergence with the best result found so far.",
+      "defaultValue": 30
     },
     {
       "type": "separator"
@@ -56,8 +70,7 @@
       "type": "textfield",
       "key": "backend",
       "label": "Backend",
-      "description": "Name of the quantum backend to use, e.g. ibm_brisbane. Retrieve from the IBM Quantum UI or run GET /v1/backends with your CRN to list available backends.",
-      "defaultValue": "",
+      "description": "Name of the quantum backend to use, e.g. ibm_brisbane.",
       "validate": { "required": true }
     }
   ]
