@@ -100,7 +100,52 @@ Learn how to effectively use the connectors in your processes:
 
 ## 🛠️ Development & Project Setup
 
-TODO
+### Project Structure
+
+```
+src/main/java/de/envite/connector/ibmq/
+├── IBMQConnectorApplication.java   # Spring Boot entry point
+├── IBMQConnectorFunction.java      # Connector entry point — dispatches to IBMQService
+├── IBMQService.java                # Core logic: submit job, poll result
+├── IBMQJobClient.java              # IBM Quantum REST API client
+├── IBMQAuthenticator.java          # IBM Cloud IAM token exchange
+├── IBMQParameterHandler.java       # Circuit input normalisation (OpenQASM / Direct Params)
+├── IBMQConstants.java              # Shared constants (API paths, headers, program IDs)
+├── HttpHelper.java                 # RestTemplate factory
+├── dto/                            # Request / response DTOs
+├── model/                          # Model classes
+└── deployment/                     # Auto-deploys example workflows on startup (optional)
+
+element-templates/                  # Camunda element template (connector UI)
+example/
+├── getting-started/                # Simple blocking and polling example workflows
+└── predefined-algorithms/          # Grover and QAOA end-to-end examples with sidecar
+docs/                               # Extended documentation
+```
+
+### Build
+
+```bash
+mvn package
+```
+
+Produces a self-contained JAR in `target/`.
+
+### Testing
+
+Unit and service tests (no external dependencies):
+
+```bash
+mvn test
+```
+
+Workflow integration tests use [Testcontainers](https://testcontainers.com/) to spin up a real Camunda engine in Docker and exercise the full connector path end-to-end:
+
+```bash
+mvn test -Dgroups=workflow
+```
+
+These are excluded from the default `mvn test` run and require a local Docker daemon.
 
 ## License
 
