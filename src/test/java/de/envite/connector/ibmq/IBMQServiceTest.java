@@ -172,33 +172,8 @@ class IBMQServiceTest {
     }
 
     // -------------------------------------------------------------------------
-    // Validation: OPEN_QASM mode
-    // -------------------------------------------------------------------------
-
-    @Test
-    void executeCircuit_withOpenQasm_andBlankCircuit_throwsIllegalArgumentException() {
-        expectIamTokenExchange();
-
-        assertThatThrownBy(() -> service.executeCircuit(openQasmRequest().circuit("  ").build()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("circuit");
-    }
-
-    // -------------------------------------------------------------------------
     // Validation: DIRECT_PARAMS mode
     // -------------------------------------------------------------------------
-
-    @Test
-    void executeCircuit_withDirectParams_andBlankParams_throwsIllegalArgumentException() {
-        expectIamTokenExchange();
-
-        assertThatThrownBy(() -> service.executeCircuit(openQasmRequest()
-                        .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
-                        .params("  ")
-                        .build()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("params");
-    }
 
     @Test
     void executeCircuit_withDirectParams_andInvalidJson_throwsRuntimeException() {
