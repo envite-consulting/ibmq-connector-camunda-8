@@ -4,7 +4,7 @@
   "id": "de.envite.ibmq-connector",
   "description": "Execute quantum circuits on IBM Quantum via the Qiskit Runtime REST API.",
   "version": 1,
-  "documentationRef": "https://github.com/envite/ibmq-connector-camunda-8",
+  "documentationRef": "https://github.com/envite-consulting/ibmq-connector-camunda-8",
   "category": {
     "id": "connectors",
     "name": "Connectors"

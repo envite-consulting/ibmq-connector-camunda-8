@@ -2,7 +2,7 @@
 
 *Run quantum circuits from your BPMN workflow — on real IBM Quantum hardware 🚀*
 
-[![Build](https://github.com/wederbn/ibmq-connector-camunda-8/actions/workflows/build.yml/badge.svg)](https://github.com/wederbn/ibmq-connector-camunda-8/actions/workflows/build.yml)
+[![Build](https://github.com/envite-consulting/ibmq-connector-camunda-8/actions/workflows/build.yml/badge.svg)](https://github.com/envite-consulting/ibmq-connector-camunda-8/actions/workflows/build.yml)
 [![Compatible with: Camunda Platform 8](https://img.shields.io/badge/Compatible%20with-Camunda%20Platform%208-26d07c)](https://docs.camunda.io/)
 [![Camunda Marketplace](https://img.shields.io/badge/Find_on-Camunda_Marketplace-brightgreen?style=flat&color=orange)](https://marketplace.camunda.com/en-US/listing?q=IBMQ&page=1)
 [![sponsored](https://img.shields.io/badge/sponsoredBy-envite-g.svg)](https://envite.de/)
