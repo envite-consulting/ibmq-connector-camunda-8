@@ -6,7 +6,7 @@
 [![Compatible with: Camunda Platform 8](https://img.shields.io/badge/Compatible%20with-Camunda%20Platform%208-26d07c)](https://docs.camunda.io/)
 [![Camunda Marketplace](https://img.shields.io/badge/Find_on-Camunda_Marketplace-brightgreen?style=flat&color=orange)](https://marketplace.camunda.com/en-US/listing?q=IBMQ&page=1)
 [![sponsored](https://img.shields.io/badge/sponsoredBy-envite-g.svg)](https://envite.de/)
-[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](/LICENSE)
+[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](/LICENSE.md)
 
 The **IBM Quantum Connector** is a [Camunda 8 outbound connector](https://docs.camunda.io/docs/components/connectors/introduction-to-connectors/) that integrates quantum computing into BPMN workflows by submitting and polling jobs on [IBM Quantum](https://quantum.cloud.ibm.com/) backends via the Qiskit Runtime API.
 It supports both Sampler and Estimator primitives, accepts quantum circuits as OpenQASM strings or raw JSON parameters, and offers blocking and non-blocking (polling) execution patterns to handle the unpredictable queue times of real quantum hardware.
@@ -153,7 +153,7 @@ These are excluded from the default `mvn test` run and require a local Docker da
 
 This project is developed under
 
-[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](/LICENSE)
+[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](/LICENSE.md)
 
 ## Sponsors and Customers
 
