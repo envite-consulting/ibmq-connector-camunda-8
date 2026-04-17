@@ -18,7 +18,7 @@
     handles circuit generation (POST /generate-circuit) and classical post-processing
     (POST /process-results). The connector and the sidecar are independent components.
 
-    Expected process variables at start (via grover-input-form or Camunda secrets):
+    Expected process variables at start (via grover-input-form or Connector secrets):
       problem        – object: { "target": "11", "n_qubits": 2, "shots": 1024 }
       sidecarUrl     – string: base URL of the quantum algorithm sidecar, e.g. http://quantum-sidecar:5000
       apiKey         – string: IBM Quantum API key (use secret: {{secrets.IBMQ_API_KEY}})

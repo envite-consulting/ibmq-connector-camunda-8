@@ -10,17 +10,18 @@
 
 The **IBM Quantum Connector** is a [Camunda 8 outbound connector](https://docs.camunda.io/docs/components/connectors/introduction-to-connectors/) that integrates quantum computing into BPMN workflows by submitting and polling jobs on [IBM Quantum](https://quantum.cloud.ibm.com/) backends via the Qiskit Runtime API.
 It supports both Sampler and Estimator primitives, accepts quantum circuits as OpenQASM strings or raw JSON parameters, and offers blocking and non-blocking (polling) execution patterns to handle the unpredictable queue times of real quantum hardware.
-For higher-level algorithms — such as Grover's Search or Quantum Approximate Optimization Algorithm (QAOA) — the [IBM Quantum Algorithm Accelerator pattern](docs/use-predefined-algorithms.md) extends the connector with a lightweight Python sidecar that generates transpiled circuits from classical problem inputs and interprets raw measurement results, enabling variational algorithms with classical optimizer loops entirely within a BPMN workflow.
+For higher-level algorithms — such as Grover's search algorithm or Quantum Approximate Optimization Algorithm (QAOA) — the [IBM Quantum Algorithm Accelerator pattern](docs/use-predefined-algorithms.md) extends the connector with a lightweight Python sidecar
+This sidecar generates transpiled circuits from classical problem inputs and interprets raw measurement results, enabling the execution of variational quantum algorithms with classical optimization loops within a BPMN workflow.
 
-In addition to the workflows orchestrating complex quantum algorithms, two simpel example workflows are provided in the `example/getting-started/` directory:
+In addition to the exemplary workflows orchestrating complex quantum algorithms, two simpel example workflows are provided in the `example/getting-started/` directory:
 
 - **[Blocking](example/getting-started/ibmq-example-workflow_blocking.bpmn)** — submits a circuit and blocks the connector thread until the job reaches a terminal state (`waitForResult=true`). This is simple to use, but quantum jobs on real hardware backends may queue for longer than the configured timeout, causing the connector to throw a timeout exception and Camunda to re-execute the circuit. Further, this can lead to an incidents if all retries are used.
 - **[Polling](example/getting-started/ibmq-example-workflow_polling.bpmn)** — submits the job without waiting (`waitForResult=false`), then polls the result every 30 seconds via a BPMN timer loop using the `GET_JOB_RESULT` operation. Recommended for real hardware backends where execution time is unpredictable.
 
-Both include a start event with an input form for all relevant connector parameters, the IBM Quantum Connector service task, a user task for reviewing the result, and an end event.
+Both workflows include a start event with an input form for all relevant connector parameters, the IBM Quantum Connector service task, a user task for reviewing the result, and an end event.
 The polling example workflow can be seen below.
-Thereby, the quantum circuit is first submitted using the IBM Quantum Connector, then a loop is entered, checking for the current state of the quantum job every 30s using the connector until it reaches a terminated state (completed, canceled, error).
-Follow the steps under [How to Run](#-how-to-run), and then import the file into Camunda Modeler.
+In the first step of the process, the quantum circuit is submitted using the IBM Quantum Connector, afterward a loop is entered, checking for the current state of the quantum job every 30s using the connector until it reaches a terminated state (completed, canceled, error).
+To run the example, follow the steps under [How to Run](#-how-to-run), and then import the file into Camunda Modeler.
 
 ![Example workflow in Camunda Modeler](docs/images/example-workflow-polling.png)
 
@@ -43,13 +44,13 @@ Follow the steps under [How to Run](#-how-to-run), and then import the file into
 ### Prerequisites
 
 - **Java 21**
-- **Maven 3.8+**
+- **Maven 3.8+** (only required when building from source)
 - A running **Camunda 8** instance (SaaS or Self-Managed)
 - An **IBM Quantum** account with an API key (the key can be obtained [here](https://quantum.cloud.ibm.com/))
 
 ### 1. Configure the Connector
 
-Edit `src/main/resources/application.properties` with your Camunda 8 connection details:
+Create an `application.properties` file with your Camunda 8 connection details:
 
 ```properties
 camunda.client.grpc-address=grpcs://<cluster-id>.<region>.zeebe.camunda.io:443
@@ -60,11 +61,36 @@ camunda.client.cloud.cluster-id=<cluster-id>
 camunda.client.cloud.region=<region>
 ```
 
-### 2. Build and Run
+### 2. Run the Connector
+
+**Option A — Pre-built JAR (recommended)**
+
+Download the latest `ibmq-connector-camunda-8-*.jar` from the [GitHub Releases](https://github.com/envite-consulting/ibmq-connector-camunda-8/releases) page and place it in a directory alongside your `application.properties` file:
+
+```
+ibmq-connector/
+├── ibmq-connector-camunda-8-1.0.0.jar
+└── application.properties
+```
+
+Then run:
 
 ```bash
-mvn spring-boot:run
+java -jar ibmq-connector-camunda-8-1.0.0.jar
 ```
+
+> **Note:** The element template `ibmq-connector.json` is also available as a release artifact — download it instead of fetching it from the repository.
+
+**Option B — Build from source**
+
+```bash
+mvn package
+java -jar target/ibmq-connector-camunda-8-*.jar
+```
+
+When building from source, edit `src/main/resources/application.properties` directly before running.
+
+---
 
 The connector registers itself as a Camunda job worker and starts polling for jobs of type `de.envite:ibmq-connector:1`.
 
@@ -98,7 +124,7 @@ Learn how to effectively use the connectors in your processes:
 * [Getting Started](docs/getting-started.md): Details of how to get started with the IBM Quantum Connector
 * [Connector Configuration and Output Reference](docs/connector-reference.md): All configuration properties and the connector output fields available for use in result expressions and downstream tasks
 * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md): Architecture and integration guide for using a Qiskit sidecar to generate quantum circuits from classical problem inputs and post-process measurement results — including support for variational algorithms (VQE, QAOA) with classical optimizer loops.
-* [Example Use Cases & HowTos](docs/usecases.md): End-to-end workflow examples including Grover's Search
+* [Example Use Cases & HowTos](docs/usecases.md): End-to-end workflow examples including Grover's search algorithm
 
 ## 🛠️ Development and Project Setup
 
@@ -141,7 +167,7 @@ Unit and service tests (no external dependencies):
 mvn test
 ```
 
-Workflow integration tests use [Testcontainers](https://testcontainers.com/) to spin up a real Camunda engine in Docker and exercise the full connector path end-to-end:
+Workflow integration tests use [Testcontainers](https://testcontainers.com/) to spin up a real Camunda Engine in Docker and exercise the full connector path end-to-end:
 
 ```bash
 mvn test -Dgroups=workflow

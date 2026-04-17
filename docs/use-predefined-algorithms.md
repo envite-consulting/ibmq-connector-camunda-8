@@ -18,7 +18,7 @@
 
 ---
 
-Modelling a quantum circuit by hand using OpenQASM is impractical for most real-world algorithms. 
+Modeling a quantum circuit by hand using OpenQASM is impractical for most real-world algorithms. 
 Instead, a **quantum circuit generation sidecar** — a lightweight Python/Qiskit service deployed alongside the connector — translates classical problem inputs into executable quantum circuits and interprets raw measurement results back into classical answers.
 
 This document describes the architecture, the sidecar API contract, how classical post-processing fits in, and how to wire everything together in a BPMN workflow.
@@ -43,7 +43,7 @@ Start Form (problem params)
 User Task / End
 ```
 
-The IBM Quantum Connector is unchanged and the sidecar owns all algorithm logic.
+The IBM Quantum Connector is unchanged and the sidecar includes all algorithm logic.
 The BPMN workflow only orchestrates data flow between the three steps.
 
 The sidecar is a separate Docker container deployed alongside the connector, reachable at `http://localhost:<port>` or by service name in Kubernetes/Compose.
@@ -166,7 +166,7 @@ The sidecar works statelessly — the workflow passes the full current state (pa
 
 ## BPMN Workflow Structure
 
-### One-shot algorithms (Grover's, Bernstein-Vazirani, etc.)
+### One-shot algorithms (Grover's search algorithm, Bernstein-Vazirani algorithm, etc.)
 
 Algorithms that require a single circuit execution use the standard polling workflow with two additional HTTP service tasks:
 
@@ -210,14 +210,14 @@ Optimize (classical)                                        │
 
 ## Post-Processing by Algorithm Type
 
-| Algorithm | Raw output | Post-processing |
-|---|---|---|
-| Grover's search | Bitstring counts | Extract highest-frequency bitstring |
-| Bernstein-Vazirani | Bitstring counts | Read hidden string directly |
-| QAOA | Bitstring counts | Map bitstring to combinatorial solution (e.g. graph cut) |
-| VQE | Expectation values | Return minimum energy and corresponding parameters |
-| Sampler (generic) | Bitstring count distribution | Algorithm-specific interpretation |
-| Estimator (generic) | Observable expectation values | Algorithm-specific interpretation |
+| Algorithm                    | Raw output | Post-processing |
+|------------------------------|---|---|
+| Grover's search algorithm    | Bitstring counts | Extract highest-frequency bitstring |
+| Bernstein-Vazirani algorithm | Bitstring counts | Read hidden string directly |
+| QAOA                         | Bitstring counts | Map bitstring to combinatorial solution (e.g. graph cut) |
+| VQE                          | Expectation values | Return minimum energy and corresponding parameters |
+| Sampler (generic)            | Bitstring count distribution | Algorithm-specific interpretation |
+| Estimator (generic)          | Observable expectation values | Algorithm-specific interpretation |
 
 All post-processing is encapsulated in the sidecar's `/process-results` endpoint. 
 The BPMN workflow only receives the final `classicalResult`.
@@ -253,7 +253,7 @@ The sidecar URL should be stored as a Camunda secret or process variable to keep
 An alternative design would be to integrate the sidecar calls directly as additional operations (`GENERATE_CIRCUIT`, `PROCESS_RESULTS`, `OPTIMIZE`) inside the IBM Quantum Connector. This was deliberately rejected for the following reasons:
 
 - **Separation of concerns** — the connector's responsibility is IBM Quantum API interaction. Sidecar calls are algorithm-specific and optional; bundling them would couple an infrastructure component to a domain-specific concern.
-- **Replaceability** — keeping the sidecar as an independent HTTP service means it can be swapped out, versioned separately, or reused from other workflows without touching the connector.
+- **Replaceability** — keeping the sidecar as an independent HTTP service means it can be exchanged, versioned separately, or reused from other workflows without touching the connector.
 - **Marketplace discoverability** — the connector listing stays clean and installable without any Python infrastructure dependency, which is critical for a low-friction marketplace experience.
 
 ### Two-listing publication strategy
@@ -287,7 +287,7 @@ Only the error payload is inaccessible.
 
 **Workaround:** The `sidecarUrl` process variable (set at start) is always available at the review user task and is the most actionable debugging information for connectivity errors. For sidecar-side failures (e.g. HTTP 500), consult the sidecar container logs directly.
 
-**Self-hosted Zeebe:** `zeebe:errorMessageVariable` is confirmed working from Camunda 8.4 onward on self-hosted deployments. Error details will populate automatically without any BPMN changes.
+**Self-hosted Zeebe:** `zeebe:errorMessageVariable` might not work on specific Camunda versions for self-hosted deployments. Hence, the error message is reported as null within the job failure form.
 
 ---
 
@@ -295,5 +295,5 @@ Only the error payload is inaccessible.
 
 Concrete end-to-end workflow examples using this pattern are documented in [Example Use Cases & HowTos](usecases.md):
 
-- [Grover's Search](usecases.md#grovers-search) — one-shot algorithm
+- [Grover's Search Algorithm](usecases.md#grovers-search) — one-shot algorithm
 - [QAOA / MaxCut](usecases.md#qaoa--max-cut) — variational algorithm with SPSA optimization loop
