@@ -69,8 +69,7 @@ For self-managed Camunda, use the gRPC address of your Zeebe gateway.
 
 ### Store IBM Quantum credentials as Connector Secrets
 
-Embedding credentials directly in a BPMN form is a security risk.
-Store them as Connector secrets instead:
+When running the IBM Quantum Connector within the Camunda Connector Runtime, the IBMQ credentials can be embedded within the utilized Camunda Cluster Connector Secrets:
 
 1. In the Camunda Console, go to your cluster → **Secrets**.
 2. Create two secrets:
@@ -79,6 +78,8 @@ Store them as Connector secrets instead:
 |---|---|
 | `IBMQ_API_KEY` | Your IBM Cloud API key |
 | `IBMQ_INSTANCE` | Your IBM Quantum instance CRN |
+
+Alternatively, when self-hosting the IBM Quantum Connector the IBMQ credentials have to be stored as environment variables using the same names as described above.
 
 Reference them in the start form when initiating a process instance using the `{{secrets.<name>}}` syntax:
 
