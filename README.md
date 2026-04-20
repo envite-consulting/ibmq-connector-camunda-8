@@ -70,14 +70,14 @@ Download the latest `ibmq-connector-camunda-8-*.jar` from the [GitHub Releases](
 
 ```
 ibmq-connector/
-├── ibmq-connector-camunda-8-1.0.0.jar
+├── ibmq-connector-camunda-8-*.jar
 └── application.properties
 ```
 
 Then run:
 
 ```bash
-java -jar ibmq-connector-camunda-8-1.0.0.jar
+java -jar ibmq-connector-camunda-8-*.jar
 ```
 
 > **Note:** The element template `ibmq-connector.json` is also available as a release artifact — download it instead of fetching it from the repository.
