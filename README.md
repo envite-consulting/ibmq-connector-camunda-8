@@ -113,7 +113,7 @@ ibmq.example.deploy=true
 > **Note:** Keep this set to `false` (the default) in production environments.
 
 If you prefer to deploy manually, upload the desired workflow from `example/getting-started/` together with `example/getting-started/ibmq-input-form.form` and `example/getting-started/ibmq-result-form.form` to your cluster — either via Camunda Web Modeler or the Zeebe API.
-In case you published the element template to a project, upload the workflow to the **same project** so Web Modeler automatically links the template and displays the connector with its icon.
+In case you published the element template to a project, upload the workflow to the **same project** so the Web Modeler automatically links the template and displays the connector with its icon.
 
 To model your own process, add a service task and apply the **IBM Quantum Connector** element template, then fill in the required properties.
 The full configuration and output reference can be found [here](docs/connector-reference.md).

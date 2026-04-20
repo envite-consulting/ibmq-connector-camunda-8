@@ -40,6 +40,9 @@ curl -X POST 'https://iam.cloud.ibm.com/identity/token' \
   -d 'grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=<your-iam-token>'
 ```
 
+> **Note:** The generated bearer token expires after 1 hour.
+
+
 ```bash
 curl -s -X GET "https://quantum.cloud.ibm.com/api/v1/backends" \
   -H "Authorization: Bearer <your-bearer-token>" \
