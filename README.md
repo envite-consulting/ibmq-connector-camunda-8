@@ -176,7 +176,7 @@ mvn test -Dgroups=workflow
 
 These are excluded from the default `mvn test` run and require a local Docker daemon.
 
-# 📨Contact
+## 📨Contact
 
 If you have any questions or ideas feel free to start a [discussion](https://github.com/envite-consulting/ibmq-connector-camunda-8/discussions) or contact us via [mail](mailto:quantum-computing@envite.de).
 
