@@ -29,78 +29,86 @@ import lombok.extern.jackson.Jacksonized;
 @ToString(callSuper = true)
 public class IBMQSubmitJobRequestDto extends IBMQBaseRequest {
 
-    /** Target quantum backend, e.g. <code>ibm_brisbane</code> or <code>ibmq_qasm_simulator</code>. */
-    @NotEmpty
-    private final String backend;
+  /**
+   * Target quantum backend, e.g. <code>ibm_brisbane</code> or <code>ibmq_qasm_simulator</code>.
+   */
+  @NotEmpty
+  private final String backend;
 
-    /**
-     * Qiskit Runtime program to execute.
-     * Supported values: <code>sampler</code>, <code>estimator</code>.
-     */
-    @NotEmpty
-    private final String programId;
+  /**
+   * Qiskit Runtime program to execute.
+   * Supported values: <code>sampler</code>, <code>estimator</code>.
+   */
+  @NotEmpty
+  private final String programId;
 
-    /**
-     * Determines how the quantum circuit is provided.
-     * <ul>
-     *   <li>{@link CircuitInputMode#OPEN_QASM} – provide an OpenQASM 2/3 string via {@code circuit}.</li>
-     *   <li>{@link CircuitInputMode#DIRECT_PARAMS} – provide the full Qiskit Runtime params JSON via {@code params}.</li>
-     * </ul>
-     */
-    @NotNull
-    @JsonProperty("CircuitInputMode")
-    @Builder.Default
-    private final CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
+  /**
+   * Determines how the quantum circuit is provided.
+   * <ul>
+   *   <li>{@link CircuitInputMode#OPEN_QASM} – provide an OpenQASM 2/3 string via {@code circuit}.</li>
+   *   <li>{@link CircuitInputMode#DIRECT_PARAMS} – provide the full Qiskit Runtime params JSON via {@code params}.</li>
+   * </ul>
+   */
+  @NotNull
+  @JsonProperty("CircuitInputMode")
+  @Builder.Default
+  private final CircuitInputMode circuitInputMode = CircuitInputMode.OPEN_QASM;
 
-    /**
-     * OpenQASM 3 circuit string using native basis gates ({@code x}, {@code sx}, {@code rz}, {@code cx}).
-     * Required when {@link #circuitInputMode} is {@link CircuitInputMode#OPEN_QASM}.
-     * Only supported for the <em>sampler</em> primitive.
-     *
-     * <p><strong>Note:</strong> the IBM Quantum REST API does not transpile circuits.
-     * Non-native gates such as {@code h} must be decomposed before submission —
-     * e.g. {@code h} ≡ {@code rz(π/2); sx; rz(π/2)}.</p>
-     */
-    private final String circuit;
+  /**
+   * OpenQASM 3 circuit string using native basis gates ({@code x}, {@code sx}, {@code rz}, {@code cx}).
+   * Required when {@link #circuitInputMode} is {@link CircuitInputMode#OPEN_QASM}.
+   * Only supported for the <em>sampler</em> primitive.
+   *
+   * <p><strong>Note:</strong> the IBM Quantum REST API does not transpile circuits.
+   * Non-native gates such as {@code h} must be decomposed before submission —
+   * e.g. {@code h} ≡ {@code rz(π/2); sx; rz(π/2)}.</p>
+   */
+  private final String circuit;
 
-    /**
-     * OpenQASM version of the supplied {@link #circuit}.
-     * <ul>
-     *   <li>{@code 2} – OpenQASM 2.0</li>
-     *   <li>{@code 3} – OpenQASM 3.0 (preferred for modern IBM Quantum backends)</li>
-     * </ul>
-     */
-    @Builder.Default
-    private final Integer qasmVersion = 3;
+  /**
+   * OpenQASM version of the supplied {@link #circuit}.
+   * <ul>
+   *   <li>{@code 2} – OpenQASM 2.0</li>
+   *   <li>{@code 3} – OpenQASM 3.0 (preferred for modern IBM Quantum backends)</li>
+   * </ul>
+   */
+  @Builder.Default
+  private final Integer qasmVersion = 3;
 
-    /**
-     * Number of shots (circuit repetitions) when using {@link CircuitInputMode#OPEN_QASM}.
-     * Ignored in {@link CircuitInputMode#DIRECT_PARAMS} mode.
-     */
-    @Min(1)
-    @Builder.Default
-    private final Integer shots = 1024;
+  /**
+   * Number of shots (circuit repetitions) when using {@link CircuitInputMode#OPEN_QASM}.
+   * Ignored in {@link CircuitInputMode#DIRECT_PARAMS} mode.
+   */
+  @Min(1)
+  @Builder.Default
+  private final Integer shots = 1024;
 
-    /**
-     * Full Qiskit Runtime job params as a JSON string.
-     * Required when {@link #circuitInputMode} is {@link CircuitInputMode#DIRECT_PARAMS}.
-     * Must include {@code "version": 2} for Primitives V2.
-     * Example for the sampler primitive:
-     * <pre>{"version": 2, "pubs": [["&lt;circuit&gt;", null, 1024]]}</pre>
-     */
-    private final String params;
+  /**
+   * Full Qiskit Runtime job params as a JSON string.
+   * Required when {@link #circuitInputMode} is {@link CircuitInputMode#DIRECT_PARAMS}.
+   * Must include {@code "version": 2} for Primitives V2.
+   * Example for the sampler primitive:
+   * <pre>{"version": 2, "pubs": [["&lt;circuit&gt;", null, 1024]]}</pre>
+   */
+  private final String params;
 
-    /** When <code>true</code> the connector polls until the job reaches a terminal state. */
-    @Builder.Default
-    private final Boolean waitForResult = true;
+  /**
+   * When <code>true</code> the connector polls until the job reaches a terminal state.
+   */
+  @Builder.Default
+  private final Boolean waitForResult = true;
 
-    /** Maximum time in seconds to wait for a result before failing. */
-    @Min(1)
-    @Builder.Default
-    private final Integer timeoutSeconds = 300;
+  /**
+   * Maximum time in seconds to wait for a result before failing.
+   */
+  @Min(1)
+  @Builder.Default
+  private final Integer timeoutSeconds = 300;
 
-    /** Polling interval in seconds when <code>waitForResult</code> is <code>true</code>. */
-    @Min(1)
-    @Builder.Default
-    private final Integer pollIntervalSeconds = 5;
+  /**
+   * Polling interval in seconds when <code>waitForResult</code> is <code>true</code>.
+   */
+  @Min(1)
+  @Builder.Default
+  private final Integer pollIntervalSeconds = 5;
 }

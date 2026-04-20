@@ -23,7 +23,9 @@ import lombok.extern.jackson.Jacksonized;
 @ToString(callSuper = true)
 public class IBMQGetJobResultRequestDto extends IBMQBaseRequest {
 
-    /** ID of the previously submitted IBM Quantum job. */
-    @NotEmpty
-    private final String jobId;
+  /**
+   * ID of the previously submitted IBM Quantum job.
+   */
+  @NotEmpty
+  private final String jobId;
 }

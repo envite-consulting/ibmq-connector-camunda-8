@@ -14,18 +14,18 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "ibmq.example.deploy", havingValue = "true")
 public class IBMQExampleWorkflowDeployer implements ApplicationRunner {
 
-    private final CamundaClient camundaClient;
+  private final CamundaClient camundaClient;
 
-    @Override
-    public void run(ApplicationArguments args) {
-        log.info("[IBMQExampleWorkflowDeployer] Deploying example workflow and forms");
-        camundaClient.newDeployResourceCommand()
-                .addResourceFromClasspath("example/getting-started/ibmq-input-form.form")
-                .addResourceFromClasspath("example/getting-started/ibmq-result-form.form")
-                .addResourceFromClasspath("example/getting-started/ibmq-example-workflow_blocking.bpmn")
-                .addResourceFromClasspath("example/getting-started/ibmq-example-workflow_polling.bpmn")
-                .send()
-                .join();
-        log.info("[IBMQExampleWorkflowDeployer] Example workflow deployed successfully");
-    }
+  @Override
+  public void run(ApplicationArguments args) {
+    log.info("[IBMQExampleWorkflowDeployer] Deploying example workflow and forms");
+    camundaClient.newDeployResourceCommand()
+        .addResourceFromClasspath("example/getting-started/ibmq-input-form.form")
+        .addResourceFromClasspath("example/getting-started/ibmq-result-form.form")
+        .addResourceFromClasspath("example/getting-started/ibmq-example-workflow_blocking.bpmn")
+        .addResourceFromClasspath("example/getting-started/ibmq-example-workflow_polling.bpmn")
+        .send()
+        .join();
+    log.info("[IBMQExampleWorkflowDeployer] Example workflow deployed successfully");
+  }
 }
