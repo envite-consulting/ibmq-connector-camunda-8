@@ -31,11 +31,15 @@ To run the example, follow the steps under [How to Run](#-how-to-run), and then 
 
 * 🚀 [How to Run](#-how-to-run)
 * 📚 [Connector Documentation](#-connector-documentation)
-    * [Getting Started](docs/getting-started.md)
-    * [Connector Configuration and Output Reference](docs/connector-reference.md)
-    * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md)
-    * [Example Use Cases & HowTos](docs/usecases.md)
+  * [Getting Started](docs/getting-started.md)
+  * [Connector Configuration and Output Reference](docs/connector-reference.md)
+  * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md)
+  * [Example Use Cases & HowTos](docs/usecases.md)
 * 🛠️ [Development and Project Setup](#️-development-and-project-setup)
+  * [Build](#build)
+  * [Testing](#testing)
+  * [Linting](#linting)
+  * [IDE Setup](#ide-setup)
 
 ---
 
@@ -174,6 +178,43 @@ mvn test -Dgroups=workflow
 ```
 
 These are excluded from the default `mvn test` run and require a local Docker daemon.
+
+### Linting
+
+The project uses **Checkstyle** (Google Java Style) for code style and **SpotBugs** (with the FindSecBugs plugin) for static bug and security analysis.
+
+Run both checks locally:
+
+```bash
+mvn checkstyle:check spotbugs:check
+```
+
+Both checks also run as a dedicated `lint` job in CI on every push and pull request.
+
+### IDE Setup
+
+**IntelliJ IDEA** has plugins for both linters available via *Settings → Plugins → Marketplace*:
+
+| Plugin | Marketplace name |
+|---|---|
+| Checkstyle | `CheckStyle-IDEA` |
+| SpotBugs | `SpotBugs` |
+
+**Checkstyle-IDEA configuration:**
+
+1. Open *Settings → Tools → Checkstyle*.
+2. Under *Configuration File*, click **+** and select **Bundled (Google Checks)**.
+3. Set it as the active configuration.
+
+This uses the same bundled `google_checks.xml` as the Maven plugin — no separate config file needed.
+Once active, violations appear as inline editor warnings and in the *Checkstyle* tool window.
+The IntelliJ code formatter (`Ctrl+Alt+L`) can be aligned with Google style by importing the scheme via *Settings → Editor → Code Style → Java → ⚙ → Import Scheme → IntelliJ IDEA code style XML* and selecting the [Google Java Style scheme](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml), so auto-formatting produces compliant output.
+
+**SpotBugs plugin configuration:**
+
+No additional configuration is required.
+Use the *SpotBugs* tool window (*Analyze → SpotBugs*) to trigger an analysis on the current file or the whole project.
+Findings are shown inline with links to the offending line.
 
 ## License
 
