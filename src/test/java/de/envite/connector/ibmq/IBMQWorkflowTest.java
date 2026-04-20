@@ -26,7 +26,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 /**
  * Workflow integration tests for the IBMQ connector.
  *
- * <p>Deploys a real BPMN process to an embedded Camunda engine, starts a process
+ * <p>Deploys a real BPMN process to an embedded Camunda Engine, starts a process
  * instance with quantum circuit input variables, and asserts that the process
  * completes with the expected output variable set by the connector.</p>
  *

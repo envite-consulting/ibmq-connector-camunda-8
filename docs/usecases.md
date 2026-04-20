@@ -3,14 +3,14 @@
 The following examples demonstrate how to use the IBM Quantum Connector and the [IBM Quantum Algorithm Accelerator pattern](use-predefined-algorithms.md) in real workflows.
 Each example includes a ready-to-run BPMN workflow, element templates, and setup instructions.
 
-| Example | Algorithm type | Reference                                               |
-|---|---|---------------------------------------------------------|
-| [Grover's Search](#grovers-search) | One-shot | [Grover, 1996](https://arxiv.org/abs/quant-ph/9605043)  |
-| [QAOA / MaxCut](#qaoa--maxcut) | Variational | [Farhi et al., 2014](https://arxiv.org/abs/1411.4028)   |
+| Example                                      | Algorithm type | Reference                                               |
+|----------------------------------------------|---|---------------------------------------------------------|
+| [Grover's Search Algorithm](#grovers-search) | One-shot | [Grover, 1996](https://arxiv.org/abs/quant-ph/9605043)  |
+| [QAOA / MaxCut](#qaoa--maxcut)               | Variational | [Farhi et al., 2014](https://arxiv.org/abs/1411.4028)   |
 
 ---
 
-## Grover's Search
+## Grover's Search Algorithm
 
 **Example workflow:** [`example/predefined-algorithms/grover/grover-search-workflow.bpmn`](../example/predefined-algorithms/grover/grover-search-workflow.bpmn)
 
