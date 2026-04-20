@@ -36,6 +36,7 @@ To run the example, follow the steps under [How to Run](#-how-to-run), and then 
     * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md)
     * [Example Use Cases & HowTos](docs/usecases.md)
 * 🛠️ [Development and Project Setup](#️-development-and-project-setup)
+* 📨 [Contact](#contact)
 
 ---
 
@@ -181,6 +182,11 @@ This project is developed under
 
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](/LICENSE.md)
 
-## Sponsors and Customers
+# 📨Contact
 
-[![sponsored](https://img.shields.io/badge/sponsoredBy-envite-g.svg)](https://envite.de/)
+If you have any questions or ideas feel free to start a [discussion](https://github.com/envite-consulting/ibmq-connector-camunda-8/discussions) or contact us via [mail](mailto:quantum-computing@envite.de).
+
+This open source project is being developed by [envite consulting GmbH](https://envite.de).
+
+![envite consulting GmbH](assets/envite-black.png#gh-light-mode-only)
+![envite consulting GmbH](assets/envite-white.png#gh-dark-mode-only)
