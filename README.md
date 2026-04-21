@@ -181,40 +181,33 @@ These are excluded from the default `mvn test` run and require a local Docker da
 
 ### Linting
 
-The project uses **Checkstyle** (Google Java Style) for code style and **SpotBugs** (with the FindSecBugs plugin) for static bug and security analysis.
+The project uses **Checkstyle** (Google Java Style) for code style analysis.
 
-Run both checks locally:
+Run the check locally using:
 
 ```bash
-mvn checkstyle:check spotbugs:check
+mvn checkstyle:check
 ```
 
 Both checks also run as a dedicated `lint` job in CI on every push and pull request.
 
 ### IDE Setup
 
-**IntelliJ IDEA** has plugins for both linters available via *Settings → Plugins → Marketplace*:
+**IntelliJ IDEA** has a Checkstyle plugin available via *Settings → Plugins → Marketplace*:
 
 | Plugin | Marketplace name |
 |---|---|
 | Checkstyle | `CheckStyle-IDEA` |
-| SpotBugs | `SpotBugs` |
 
 **Checkstyle-IDEA configuration:**
 
 1. Open *Settings → Tools → Checkstyle*.
-2. Under *Configuration File*, click **+** and select **Bundled (Google Checks)**.
+2. Under *Configuration File*, click **+** and select **Use a local Checkstyle file** and select [checkstyle_configuration.xml](checkstyle_configuration.xml).
 3. Set it as the active configuration.
 
-This uses the same bundled `google_checks.xml` as the Maven plugin — no separate config file needed.
 Once active, violations appear as inline editor warnings and in the *Checkstyle* tool window.
-The IntelliJ code formatter (`Ctrl+Alt+L`) can be aligned with Google style by importing the scheme via *Settings → Editor → Code Style → Java → ⚙ → Import Scheme → IntelliJ IDEA code style XML* and selecting the [Google Java Style scheme](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml), so auto-formatting produces compliant output.
 
-**SpotBugs plugin configuration:**
-
-No additional configuration is required.
-Use the *SpotBugs* tool window (*Analyze → SpotBugs*) to trigger an analysis on the current file or the whole project.
-Findings are shown inline with links to the offending line.
+The IntelliJ code formatter (`Ctrl+Alt+L`) can be aligned with the Code style by importing the scheme via *Settings → Editor → Code Style → Java → ⚙ → Import Scheme → IntelliJ IDEA code style XML* and selecting [checkstyle_configuration.xml](checkstyle_configuration.xml), so auto-formatting produces compliant output.
 
 ## License
 
