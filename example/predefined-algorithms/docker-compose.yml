@@ -6,8 +6,12 @@ services:
     build: ../..
     volumes:
       - ../../src/main/resources/application.properties:/app/config/application.properties:ro
+    env_file:
+      - .env          # IBMQ_API_KEY, IBMQ_INSTANCE
     environment:
       SPRING_CONFIG_LOCATION: "file:/app/config/,classpath:/"
+      # Suppress deprecation warning – empty prefix means env var name == secret name.
+      CAMUNDA_CONNECTOR_SECRETPROVIDER_ENVIRONMENT_PREFIX: ""
     depends_on:
       quantum-sidecar:
         condition: service_healthy
