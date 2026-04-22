@@ -263,6 +263,8 @@ Then edit `.env`:
                                                                                                                                                                                                                                                                                                                                                                                                           
 > **Note:** `.env` is listed in `.gitignore` and will never be committed.
 
+To utilize a sidecar to run a quantum application follow this [description](usecases.md#running-the-example).
+
 ---
 
 ## Camunda Marketplace Publication Strategy
