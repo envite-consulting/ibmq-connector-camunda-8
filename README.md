@@ -1,4 +1,6 @@
-# IBM Quantum Connector for Camunda 8 ⚛️
+<img align="right" width="100" src="./assets/envite_quantum_icon_transparent.png">
+
+# IBM Quantum Connector for Camunda 8 
 
 *Run quantum circuits from your BPMN workflow — on real IBM Quantum hardware 🚀*
 
