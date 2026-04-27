@@ -125,6 +125,7 @@ def generate_circuit():
         "backend":       data.get("backend"),
     }
 
+    app.logger.info("Generating circuit for algorithm %s with problem %s and params %s", algorithm, problem, params)
     try:
         backend_info["api_key"] = _resolve_secret(backend_info["api_key"])
     except ValueError as exc:
@@ -174,6 +175,7 @@ def _generate_grover_circuit(problem: dict, backend_info: dict) -> tuple[str, in
     qc.measure(range(n), range(n))
 
     qc_native = transpile(qc, **transpile_args, optimization_level=3)
+    app.logger.info("Successfully generated Grover Circuit")
     return qasm3_dumps(qc_native), shots
 
 
@@ -228,6 +230,7 @@ def _generate_qaoa_circuit(problem: dict, params: list | None, backend_info: dic
     qc.measure(range(n), range(n))
 
     qc_native = transpile(qc, **_resolve_transpile_args(problem, backend_info), optimization_level=3)
+    app.logger.info("Successfully generated QAOA Circuit")
     return qasm3_dumps(qc_native), shots, params
 
 
