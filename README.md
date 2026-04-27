@@ -31,11 +31,15 @@ To run the example, follow the steps under [How to Run](#-how-to-run), and then 
 
 * 🚀 [How to Run](#-how-to-run)
 * 📚 [Connector Documentation](#-connector-documentation)
-    * [Getting Started](docs/getting-started.md)
-    * [Connector Configuration and Output Reference](docs/connector-reference.md)
-    * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md)
-    * [Example Use Cases & HowTos](docs/usecases.md)
+  * [Getting Started](docs/getting-started.md)
+  * [Connector Configuration and Output Reference](docs/connector-reference.md)
+  * [Using Predefined Quantum Algorithms via a Sidecar](docs/use-predefined-algorithms.md)
+  * [Example Use Cases & HowTos](docs/usecases.md)
 * 🛠️ [Development and Project Setup](#️-development-and-project-setup)
+  * [Build](#build)
+  * [Testing](#testing)
+  * [Linting](#linting)
+  * [IDE Setup](#ide-setup)
 * 📨 [Contact](#contact)
 
 ---
@@ -175,6 +179,37 @@ mvn test -Dgroups=workflow
 ```
 
 These are excluded from the default `mvn test` run and require a local Docker daemon.
+
+### Linting
+
+The project uses **Checkstyle** (Google Java Style) for code style analysis.
+
+Run the check locally using:
+
+```bash
+mvn checkstyle:check
+```
+
+Both checks also run as a dedicated `lint` job in CI on every push and pull request.
+
+### IDE Setup
+
+**IntelliJ IDEA** has a Checkstyle plugin available via *Settings → Plugins → Marketplace*:
+
+| Plugin | Marketplace name |
+|---|---|
+| Checkstyle | `CheckStyle-IDEA` |
+
+**Checkstyle-IDEA configuration:**
+
+1. Open *Settings → Tools → Checkstyle*.
+2. Under *Configuration File*, click **+** and select **Use a local Checkstyle file** and select [checkstyle_configuration.xml](checkstyle_configuration.xml).
+3. Set it as the active configuration.
+
+Once active, violations appear as inline editor warnings and in the *Checkstyle* tool window.
+
+The IntelliJ code formatter (`Ctrl+Alt+L`) can be aligned with the Code style by importing the scheme via *Settings → Editor → Code Style → Java → ⚙ → Import Scheme → IntelliJ IDEA code style XML* and selecting [checkstyle_configuration.xml](checkstyle_configuration.xml), so auto-formatting produces compliant output.
+
 
 ## 📨Contact
 

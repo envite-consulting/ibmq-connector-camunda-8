@@ -13,19 +13,25 @@ import lombok.Data;
 @AllArgsConstructor
 public class IBMQConnectorResponseDto {
 
-    /** IBM Quantum job identifier. */
-    private String jobId;
+  /**
+   * IBM Quantum job identifier.
+   */
+  private String jobId;
 
-    /** Terminal job status: COMPLETED, FAILED, CANCELLED. */
-    private String status;
+  /**
+   * Terminal job status: COMPLETED, FAILED, CANCELLED.
+   */
+  private String status;
 
-    /**
-     * Job results returned by the IBM Quantum API.
-     * <code>null</code> when <code>waitForResult</code> is <code>false</code>
-     * or the job has not yet completed.
-     */
-    private Object result;
+  /**
+   * Job results returned by the IBM Quantum API.
+   * <code>null</code> when <code>waitForResult</code> is <code>false</code>
+   * or the job has not yet completed.
+   */
+  private Object result;
 
-    /** Link to the job details page in the IBM Quantum web UI. */
-    private String resultUrl;
+  /**
+   * Link to the job details page in the IBM Quantum web UI.
+   */
+  private String resultUrl;
 }

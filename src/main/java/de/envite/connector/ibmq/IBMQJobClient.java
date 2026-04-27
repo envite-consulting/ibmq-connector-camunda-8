@@ -1,10 +1,28 @@
 package de.envite.connector.ibmq;
 
+import static de.envite.connector.ibmq.IBMQConstants.API_PATH_JOBS;
+import static de.envite.connector.ibmq.IBMQConstants.API_PATH_RESULTS;
+import static de.envite.connector.ibmq.IBMQConstants.FIELD_BACKEND;
+import static de.envite.connector.ibmq.IBMQConstants.FIELD_ID;
+import static de.envite.connector.ibmq.IBMQConstants.FIELD_PARAMS;
+import static de.envite.connector.ibmq.IBMQConstants.FIELD_PROGRAM_ID;
+import static de.envite.connector.ibmq.IBMQConstants.FIELD_STATUS;
+import static de.envite.connector.ibmq.IBMQConstants.HEADER_IBM_API_VERSION;
+import static de.envite.connector.ibmq.IBMQConstants.HEADER_SERVICE_CRN;
+import static de.envite.connector.ibmq.IBMQConstants.IBM_API_VERSION;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_CANCELLED;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_COMPLETED;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_ERROR;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_FAILED;
+import static de.envite.connector.ibmq.util.HttpHelper.requireBody;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.envite.connector.ibmq.dto.IBMQBaseRequest;
 import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
+import java.time.Instant;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -14,12 +32,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-
-import java.time.Instant;
-import java.util.Set;
-
-import static de.envite.connector.ibmq.util.HttpHelper.requireBody;
-import static de.envite.connector.ibmq.IBMQConstants.*;
 
 /**
  * HTTP client for the IBM Quantum Runtime Jobs API.
@@ -33,111 +45,116 @@ import static de.envite.connector.ibmq.IBMQConstants.*;
 @Component
 public class IBMQJobClient {
 
-    private static final Set<String> TERMINAL_STATES = Set.of(STATUS_COMPLETED, STATUS_FAILED, STATUS_CANCELLED, STATUS_ERROR);
+  private static final Set<String> TERMINAL_STATES =
+      Set.of(STATUS_COMPLETED, STATUS_FAILED, STATUS_CANCELLED, STATUS_ERROR);
 
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
+  private final RestTemplate restTemplate;
+  private final ObjectMapper objectMapper;
 
-    /**
-     * Submits a Qiskit Runtime job and returns its assigned job ID.
-     *
-     * @param request     request carrying the target URL, program ID, backend, and instance CRN
-     * @param accessToken IBM Cloud IAM bearer token
-     * @param params      pre-built job parameters (e.g. PUBs for sampler, observables for estimator)
-     * @return the job ID assigned by the IBM Quantum runtime
-     */
-    public String submitJob(IBMQSubmitJobRequestDto request, String accessToken, JsonNode params) {
-        ObjectNode jobBody = objectMapper.createObjectNode();
-        jobBody.put(FIELD_PROGRAM_ID, request.getProgramId());
-        jobBody.put(FIELD_BACKEND, request.getBackend());
-        jobBody.set(FIELD_PARAMS, params);
+  /**
+   * Submits a Qiskit Runtime job and returns its assigned job ID.
+   *
+   * @param request     request carrying the target URL, program ID, backend, and instance CRN
+   * @param accessToken IBM Cloud IAM bearer token
+   * @param params      pre-built job parameters (e.g. PUBs for sampler, observables for estimator)
+   * @return the job ID assigned by the IBM Quantum runtime
+   */
+  public String submitJob(IBMQSubmitJobRequestDto request, String accessToken, JsonNode params) {
+    ObjectNode jobBody = objectMapper.createObjectNode();
+    jobBody.put(FIELD_PROGRAM_ID, request.getProgramId());
+    jobBody.put(FIELD_BACKEND, request.getBackend());
+    jobBody.set(FIELD_PARAMS, params);
 
-        log.debug("[IBMQJobClient] Submitting job: URL={}, backend={}, programId={}", request.getIbmqUrl() + API_PATH_JOBS, request.getBackend(), request.getProgramId());
-        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                request.getIbmqUrl() + API_PATH_JOBS,
-                new HttpEntity<>(jobBody, apiHeaders(accessToken, request.getIbmqInstance())),
-                JsonNode.class
-        );
+    log.debug("[IBMQJobClient] Submitting job: URL={}, backend={}, programId={}",
+        request.getIbmqUrl() + API_PATH_JOBS, request.getBackend(), request.getProgramId());
+    ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+        request.getIbmqUrl() + API_PATH_JOBS,
+        new HttpEntity<>(jobBody, apiHeaders(accessToken, request.getIbmqInstance())),
+        JsonNode.class
+    );
 
-        return requireBody(response, "job submission").get(FIELD_ID).asText();
+    return requireBody(response, "job submission").get(FIELD_ID).asText();
+  }
+
+  /**
+   * Polls the job status until it reaches a terminal state or the configured timeout expires.
+   *
+   * @param request     request carrying the target URL, instance CRN, timeout, and poll interval
+   * @param accessToken IBM Cloud IAM bearer token
+   * @param jobId       ID of the job to poll
+   * @return the terminal status ({@code COMPLETED}, {@code FAILED}, {@code CANCELLED}, or {@code ERROR})
+   * @throws RuntimeException if the timeout is exceeded or polling is interrupted
+   */
+  public String pollUntilTerminal(IBMQSubmitJobRequestDto request, String accessToken,
+                                  String jobId) {
+    Instant deadline = Instant.now().plusSeconds(request.getTimeoutSeconds());
+
+    while (Instant.now().isBefore(deadline)) {
+      String status = getJobStatus(request, accessToken, jobId);
+      log.debug("[IBMQJobClient] Polled job status: id={} status={}", jobId, status);
+      if (TERMINAL_STATES.contains(status)) {
+        return status;
+      }
+
+      try {
+        Thread.sleep(request.getPollIntervalSeconds() * 1000L);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException("Polling interrupted", e);
+      }
     }
 
-    /**
-     * Polls the job status until it reaches a terminal state or the configured timeout expires.
-     *
-     * @param request     request carrying the target URL, instance CRN, timeout, and poll interval
-     * @param accessToken IBM Cloud IAM bearer token
-     * @param jobId       ID of the job to poll
-     * @return the terminal status ({@code COMPLETED}, {@code FAILED}, {@code CANCELLED}, or {@code ERROR})
-     * @throws RuntimeException if the timeout is exceeded or polling is interrupted
-     */
-    public String pollUntilTerminal(IBMQSubmitJobRequestDto request, String accessToken, String jobId) {
-        Instant deadline = Instant.now().plusSeconds(request.getTimeoutSeconds());
+    throw new RuntimeException("Timed out after %d seconds waiting for job %s".formatted(
+        request.getTimeoutSeconds(), jobId));
+  }
 
-        while (Instant.now().isBefore(deadline)) {
-            String status = getJobStatus(request, accessToken, jobId);
-            log.debug("[IBMQJobClient] Polled job status: id={} status={}", jobId, status);
-            if (TERMINAL_STATES.contains(status)) {
-                return status;
-            }
+  /**
+   * Retrieves the results of a completed job.
+   *
+   * @param request     request carrying the target URL and instance CRN
+   * @param accessToken IBM Cloud IAM bearer token
+   * @param jobId       ID of the completed job
+   * @return the raw result payload as a {@link JsonNode}
+   */
+  public Object getJobResults(IBMQBaseRequest request, String accessToken, String jobId) {
+    ResponseEntity<String> response = restTemplate.exchange(
+        request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId + API_PATH_RESULTS,
+        HttpMethod.GET,
+        new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
+        String.class
+    );
 
-            try {
-                Thread.sleep(request.getPollIntervalSeconds() * 1000L);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Polling interrupted", e);
-            }
-        }
-
-        throw new RuntimeException("Timed out after %d seconds waiting for job %s".formatted(
-                request.getTimeoutSeconds(), jobId));
+    String body = response.getBody();
+    if (body == null) {
+      throw new IllegalStateException("Empty response body for job results");
     }
 
-    /**
-     * Retrieves the results of a completed job.
-     *
-     * @param request     request carrying the target URL and instance CRN
-     * @param accessToken IBM Cloud IAM bearer token
-     * @param jobId       ID of the completed job
-     * @return the raw result payload as a {@link JsonNode}
-     */
-    public Object getJobResults(IBMQBaseRequest request, String accessToken, String jobId) {
-        ResponseEntity<String> response = restTemplate.exchange(
-                request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId + API_PATH_RESULTS,
-                HttpMethod.GET,
-                new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
-                String.class
-        );
-
-        String body = response.getBody();
-        if (body == null) throw new IllegalStateException("Empty response body for job results");
-
-        try {
-            return objectMapper.readTree(body);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse job results as JSON", e);
-        }
+    try {
+      return objectMapper.readTree(body);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to parse job results as JSON", e);
     }
+  }
 
-    /**
-     * Fetches the current status of a job.
-     */
-    public String getJobStatus(IBMQBaseRequest request, String accessToken, String jobId) {
-        ResponseEntity<JsonNode> response = restTemplate.exchange(
-                request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId,
-                HttpMethod.GET,
-                new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
-                JsonNode.class
-        );
-        return requireBody(response, "job status").get(FIELD_STATUS).asText().toUpperCase();
-    }
+  /**
+   * Fetches the current status of a job.
+   */
+  public String getJobStatus(IBMQBaseRequest request, String accessToken, String jobId) {
+    ResponseEntity<JsonNode> response = restTemplate.exchange(
+        request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId,
+        HttpMethod.GET,
+        new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
+        JsonNode.class
+    );
+    return requireBody(response, "job status").get(FIELD_STATUS).asText().toUpperCase();
+  }
 
-    private HttpHeaders apiHeaders(String accessToken, String instanceCrn) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(HEADER_SERVICE_CRN, instanceCrn);
-        headers.set(HEADER_IBM_API_VERSION, IBM_API_VERSION);
-        return headers;
-    }
+  private HttpHeaders apiHeaders(String accessToken, String instanceCrn) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setBearerAuth(accessToken);
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.set(HEADER_SERVICE_CRN, instanceCrn);
+    headers.set(HEADER_IBM_API_VERSION, IBM_API_VERSION);
+    return headers;
+  }
 }

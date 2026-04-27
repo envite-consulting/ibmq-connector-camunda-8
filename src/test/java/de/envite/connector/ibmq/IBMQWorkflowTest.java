@@ -1,9 +1,26 @@
 package de.envite.connector.ibmq;
 
+import static de.envite.connector.ibmq.IBMQConstants.API_PATH_JOBS;
+import static de.envite.connector.ibmq.IBMQConstants.API_PATH_RESULTS;
+import static de.envite.connector.ibmq.IBMQConstants.HEADER_IBM_API_VERSION;
+import static de.envite.connector.ibmq.IBMQConstants.HEADER_SERVICE_CRN;
+import static de.envite.connector.ibmq.IBMQConstants.IAM_TOKEN_URL;
+import static de.envite.connector.ibmq.IBMQConstants.IBM_API_VERSION;
+import static de.envite.connector.ibmq.IBMQConstants.PROGRAM_ESTIMATOR;
+import static de.envite.connector.ibmq.IBMQConstants.PROGRAM_SAMPLER;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_COMPLETED;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_QUEUED;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
 import io.camunda.client.CamundaClient;
 import io.camunda.client.api.response.ProcessInstanceEvent;
 import io.camunda.process.test.api.CamundaAssert;
 import io.camunda.process.test.api.CamundaSpringProcessTest;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -14,14 +31,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-import static de.envite.connector.ibmq.IBMQConstants.*;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 /**
  * Workflow integration tests for the IBMQ connector.
@@ -40,163 +49,164 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 @SpringBootTest
 class IBMQWorkflowTest {
 
-    private static final String SERVICE_URL  = "https://test.quantum-computing.ibm.com";
-    private static final String API_KEY      = "test-api-key";
-    private static final String ACCESS_TOKEN = "test-access-token";
-    private static final String INSTANCE_CRN = "crn:v1:bluemix:public:quantum-computing:us-east:a/test-account/test-instance::";
-    private static final String JOB_ID       = "workflow-job-001";
-    private static final String CIRCUIT      = "OPENQASM 3.0; qubit[1] q; h q[0];";
+  private static final String SERVICE_URL = "https://test.quantum-computing.ibm.com";
+  private static final String API_KEY = "test-api-key";
+  private static final String ACCESS_TOKEN = "test-access-token";
+  private static final String INSTANCE_CRN =
+      "crn:v1:bluemix:public:quantum-computing:us-east:a/test-account/test-instance::";
+  private static final String JOB_ID = "workflow-job-001";
+  private static final String CIRCUIT = "OPENQASM 3.0; qubit[1] q; h q[0];";
 
-    @Autowired
-    private CamundaClient camundaClient;
+  @Autowired
+  private CamundaClient camundaClient;
 
-    @Autowired
-    private RestTemplate restTemplate;
+  @Autowired
+  private RestTemplate restTemplate;
 
-    private MockRestServiceServer mockServer;
+  private MockRestServiceServer mockServer;
 
-    @BeforeEach
-    void setUp() {
-        camundaClient.newDeployResourceCommand()
-                .addResourceFromClasspath("ibmq_circuit_execution.bpmn")
-                .send()
-                .join();
+  @BeforeEach
+  void setUp() {
+    camundaClient.newDeployResourceCommand()
+        .addResourceFromClasspath("ibmq_circuit_execution.bpmn")
+        .send()
+        .join();
 
-        mockServer = MockRestServiceServer.createServer(restTemplate);
-    }
+    mockServer = MockRestServiceServer.createServer(restTemplate);
+  }
 
-    @AfterEach
-    void tearDown() {
-        mockServer.reset();
-    }
+  @AfterEach
+  void tearDown() {
+    mockServer.reset();
+  }
 
-    @Test
-    void openQasmSamplerJob_processCompletesWithResult() {
-        expectIamTokenExchange();
-        expectJobSubmission(JOB_ID);
-        expectJobStatus(JOB_ID, STATUS_COMPLETED);
-        expectJobResults(JOB_ID);
+  @Test
+  void openQasmSamplerJob_processCompletesWithResult() {
+    expectIamTokenExchange();
+    expectJobSubmission(JOB_ID);
+    expectJobStatus(JOB_ID, STATUS_COMPLETED);
+    expectJobResults(JOB_ID);
 
-        ProcessInstanceEvent instance = startProcess(Map.ofEntries(
-                Map.entry("apiKey",              API_KEY),
-                Map.entry("ibmqUrl",             SERVICE_URL),
-                Map.entry("ibmqInstance",        INSTANCE_CRN),
-                Map.entry("backend",             "ibmq_qasm_simulator"),
-                Map.entry("programId",           PROGRAM_SAMPLER),
-                Map.entry("CircuitInputMode",    "OPEN_QASM"),
-                Map.entry("circuit",             CIRCUIT),
-                Map.entry("shots",               1024),
-                Map.entry("waitForResult",       true),
-                Map.entry("timeoutSeconds",      30),
-                Map.entry("pollIntervalSeconds", 1)
-        ));
+    ProcessInstanceEvent instance = startProcess(Map.ofEntries(
+        Map.entry("apiKey", API_KEY),
+        Map.entry("ibmqUrl", SERVICE_URL),
+        Map.entry("ibmqInstance", INSTANCE_CRN),
+        Map.entry("backend", "ibmq_qasm_simulator"),
+        Map.entry("programId", PROGRAM_SAMPLER),
+        Map.entry("CircuitInputMode", "OPEN_QASM"),
+        Map.entry("circuit", CIRCUIT),
+        Map.entry("shots", 1024),
+        Map.entry("waitForResult", true),
+        Map.entry("timeoutSeconds", 30),
+        Map.entry("pollIntervalSeconds", 1)
+    ));
 
-        CamundaAssert.assertThatProcessInstance(instance)
-                .isCompleted()
-                .hasVariableNames("ibmqResult");
-    }
+    CamundaAssert.assertThatProcessInstance(instance)
+        .isCompleted()
+        .hasVariableNames("ibmqResult");
+  }
 
-    @Test
-    void directParamsEstimatorJob_processCompletesWithResult() {
-        expectIamTokenExchange();
-        expectJobSubmission(JOB_ID);
-        expectJobStatus(JOB_ID, STATUS_COMPLETED);
-        expectJobResults(JOB_ID);
+  @Test
+  void directParamsEstimatorJob_processCompletesWithResult() {
+    expectIamTokenExchange();
+    expectJobSubmission(JOB_ID);
+    expectJobStatus(JOB_ID, STATUS_COMPLETED);
+    expectJobResults(JOB_ID);
 
-        ProcessInstanceEvent instance = startProcess(Map.ofEntries(
-                Map.entry("apiKey",              API_KEY),
-                Map.entry("ibmqUrl",             SERVICE_URL),
-                Map.entry("ibmqInstance",        INSTANCE_CRN),
-                Map.entry("backend",             "ibm_brisbane"),
-                Map.entry("programId",           PROGRAM_ESTIMATOR),
-                Map.entry("CircuitInputMode",    "DIRECT_PARAMS"),
-                Map.entry("params",              "{\"pubs\": [[\"circuit\", [\"ZZ\"], null]]}"),
-                Map.entry("waitForResult",       true),
-                Map.entry("timeoutSeconds",      30),
-                Map.entry("pollIntervalSeconds", 1)
-        ));
+    ProcessInstanceEvent instance = startProcess(Map.ofEntries(
+        Map.entry("apiKey", API_KEY),
+        Map.entry("ibmqUrl", SERVICE_URL),
+        Map.entry("ibmqInstance", INSTANCE_CRN),
+        Map.entry("backend", "ibm_brisbane"),
+        Map.entry("programId", PROGRAM_ESTIMATOR),
+        Map.entry("CircuitInputMode", "DIRECT_PARAMS"),
+        Map.entry("params", "{\"pubs\": [[\"circuit\", [\"ZZ\"], null]]}"),
+        Map.entry("waitForResult", true),
+        Map.entry("timeoutSeconds", 30),
+        Map.entry("pollIntervalSeconds", 1)
+    ));
 
-        CamundaAssert.assertThatProcessInstance(instance)
-                .isCompleted()
-                .hasVariableNames("ibmqResult");
-    }
+    CamundaAssert.assertThatProcessInstance(instance)
+        .isCompleted()
+        .hasVariableNames("ibmqResult");
+  }
 
-    @Test
-    void samplerJob_withNoWait_processCompletesWithQueuedStatus() {
-        expectIamTokenExchange();
-        expectJobSubmission(JOB_ID);
+  @Test
+  void samplerJob_withNoWait_processCompletesWithQueuedStatus() {
+    expectIamTokenExchange();
+    expectJobSubmission(JOB_ID);
 
-        ProcessInstanceEvent instance = startProcess(Map.ofEntries(
-                Map.entry("apiKey",              API_KEY),
-                Map.entry("ibmqUrl",             SERVICE_URL),
-                Map.entry("ibmqInstance",        INSTANCE_CRN),
-                Map.entry("backend",             "ibmq_qasm_simulator"),
-                Map.entry("programId",           PROGRAM_SAMPLER),
-                Map.entry("CircuitInputMode",    "OPEN_QASM"),
-                Map.entry("circuit",             CIRCUIT),
-                Map.entry("shots",               512),
-                Map.entry("waitForResult",       false),
-                Map.entry("timeoutSeconds",      30),
-                Map.entry("pollIntervalSeconds", 1)
-        ));
+    ProcessInstanceEvent instance = startProcess(Map.ofEntries(
+        Map.entry("apiKey", API_KEY),
+        Map.entry("ibmqUrl", SERVICE_URL),
+        Map.entry("ibmqInstance", INSTANCE_CRN),
+        Map.entry("backend", "ibmq_qasm_simulator"),
+        Map.entry("programId", PROGRAM_SAMPLER),
+        Map.entry("CircuitInputMode", "OPEN_QASM"),
+        Map.entry("circuit", CIRCUIT),
+        Map.entry("shots", 512),
+        Map.entry("waitForResult", false),
+        Map.entry("timeoutSeconds", 30),
+        Map.entry("pollIntervalSeconds", 1)
+    ));
 
-        CamundaAssert.assertThatProcessInstance(instance)
-                .isCompleted()
-                .hasVariableSatisfies("ibmqResult", Map.class, result ->
-                        assertThat(result.get("status")).isEqualTo(STATUS_QUEUED));
-    }
+    CamundaAssert.assertThatProcessInstance(instance)
+        .isCompleted()
+        .hasVariableSatisfies("ibmqResult", Map.class, result ->
+            assertThat(result.get("status")).isEqualTo(STATUS_QUEUED));
+  }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Helpers
+  // -------------------------------------------------------------------------
 
-    private ProcessInstanceEvent startProcess(Map<String, Object> variables) {
-        return camundaClient.newCreateInstanceCommand()
-                .bpmnProcessId("ibmq-circuit-execution")
-                .latestVersion()
-                .variables(variables)
-                .send()
-                .join();
-    }
+  private ProcessInstanceEvent startProcess(Map<String, Object> variables) {
+    return camundaClient.newCreateInstanceCommand()
+        .bpmnProcessId("ibmq-circuit-execution")
+        .latestVersion()
+        .variables(variables)
+        .send()
+        .join();
+  }
 
-    private void expectIamTokenExchange() {
-        mockServer.expect(requestTo(IAM_TOKEN_URL))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess(
-                        "{\"access_token\": \"" + ACCESS_TOKEN + "\", \"expires_in\": 3600}",
-                        MediaType.APPLICATION_JSON));
-    }
+  private void expectIamTokenExchange() {
+    mockServer.expect(requestTo(IAM_TOKEN_URL))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess(
+            "{\"access_token\": \"" + ACCESS_TOKEN + "\", \"expires_in\": 3600}",
+            MediaType.APPLICATION_JSON));
+  }
 
-    private void expectJobSubmission(String jobId) {
-        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
-                .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
-                .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
-                .andRespond(withSuccess(
-                        """
-                        {"id": "%s", "status": "QUEUED"}
-                        """.formatted(jobId),
-                        MediaType.APPLICATION_JSON));
-    }
+  private void expectJobSubmission(String jobId) {
+    mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
+        .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
+        .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
+        .andRespond(withSuccess(
+            """
+                {"id": "%s", "status": "QUEUED"}
+                """.formatted(jobId),
+            MediaType.APPLICATION_JSON));
+  }
 
-    private void expectJobStatus(String jobId, String status) {
-        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + jobId))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(
-                        """
-                        {"id": "%s", "status": "%s"}
-                        """.formatted(jobId, status),
-                        MediaType.APPLICATION_JSON));
-    }
+  private void expectJobStatus(String jobId, String status) {
+    mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + jobId))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess(
+            """
+                {"id": "%s", "status": "%s"}
+                """.formatted(jobId, status),
+            MediaType.APPLICATION_JSON));
+  }
 
-    private void expectJobResults(String jobId) {
-        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + jobId + API_PATH_RESULTS))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(
-                        """
-                        {"quasi_dists": [{"0": 0.5, "1": 0.5}], "metadata": [{"shots": 1024}]}
-                        """,
-                        MediaType.APPLICATION_JSON));
-    }
+  private void expectJobResults(String jobId) {
+    mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + jobId + API_PATH_RESULTS))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess(
+            """
+                {"quasi_dists": [{"0": 0.5, "1": 0.5}], "metadata": [{"shots": 1024}]}
+                """,
+            MediaType.APPLICATION_JSON));
+  }
 }

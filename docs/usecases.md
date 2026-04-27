@@ -71,6 +71,10 @@ Start Form → Generate Circuit → Submit Job → [Poll Loop] → Process Resul
 > For production deployments, host the sidecar container on a publicly reachable endpoint.
 
 1. Start the connector and sidecar:
+
+   If you are using Camunda Connector Secrets, set up your environment variables as described [here](use-predefined-algorithms.md#deploying-the-sidecar).
+
+   Afterward, start the container as follows:
    ```bash
    cd example/predefined-algorithms
    docker compose up --build

@@ -24,6 +24,7 @@ Endpoints:
 """
 
 import os
+import re
 import numpy as np
 import requests as http
 from flask import Flask, request, jsonify
@@ -37,6 +38,31 @@ app = Flask(__name__)
 OBJECTIVE_EVAL_URL = os.environ.get(
     "OBJECTIVE_EVAL_URL", "http://objective-evaluation-service:5072"
 )
+
+_SECRET_PATTERN = re.compile(r"^\{\{secret\.([A-Za-z_][A-Za-z0-9_]*)\}\}$")
+
+
+def _resolve_secret(value: str | None) -> str | None:
+    """Resolve a {{secret.ENV_VARNAME}} placeholder to the corresponding env var value.
+
+    If *value* matches the pattern, the named environment variable is looked up
+    and its value is returned. A 400-style ValueError is raised when the variable
+    is absent so callers can surface a clear error response. Plain values are
+    returned unchanged.
+    """
+    if not isinstance(value, str):
+        return value
+    m = _SECRET_PATTERN.match(value.strip())
+    if m is None:
+        return value
+    env_var = m.group(1)
+    resolved = os.environ.get(env_var)
+    if resolved is None:
+        raise ValueError(
+            f"Secret reference '{{{{secret.{env_var}}}}}' could not be resolved: "
+            f"environment variable '{env_var}' is not set."
+        )
+    return resolved
 
 
 # ─── Shared circuit helpers ───────────────────────────────────────────────────
@@ -99,6 +125,12 @@ def generate_circuit():
         "backend":       data.get("backend"),
     }
 
+    app.logger.info("Generating circuit for algorithm %s with problem %s and params %s", algorithm, problem, params)
+    try:
+        backend_info["api_key"] = _resolve_secret(backend_info["api_key"])
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
     if algorithm == "grover":
         circuit, shots = _generate_grover_circuit(problem, backend_info)
         return jsonify({"circuit": circuit, "shots": shots})
@@ -143,6 +175,7 @@ def _generate_grover_circuit(problem: dict, backend_info: dict) -> tuple[str, in
     qc.measure(range(n), range(n))
 
     qc_native = transpile(qc, **transpile_args, optimization_level=3)
+    app.logger.info("Successfully generated Grover Circuit")
     return qasm3_dumps(qc_native), shots
 
 
@@ -197,6 +230,7 @@ def _generate_qaoa_circuit(problem: dict, params: list | None, backend_info: dic
     qc.measure(range(n), range(n))
 
     qc_native = transpile(qc, **_resolve_transpile_args(problem, backend_info), optimization_level=3)
+    app.logger.info("Successfully generated QAOA Circuit")
     return qasm3_dumps(qc_native), shots, params
 
 
