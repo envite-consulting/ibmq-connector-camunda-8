@@ -20,29 +20,31 @@ import lombok.extern.jackson.Jacksonized;
 @ToString
 public class IBMQBaseRequest {
 
-    /**
-     * Determines which operation to perform.
-     * Defaults to {@link OperationMode#SUBMIT_JOB} for backwards compatibility.
-     */
-    @NotNull
-    @Builder.Default
-    private final OperationMode operationMode = OperationMode.SUBMIT_JOB;
+  /**
+   * Determines which operation to perform.
+   * Defaults to {@link OperationMode#SUBMIT_JOB} for backwards compatibility.
+   */
+  @NotNull
+  @Builder.Default
+  private final OperationMode operationMode = OperationMode.SUBMIT_JOB;
 
-    /** IBM Cloud API key. Reference a Camunda secret via <code>{{secrets.IBMQ_API_KEY}}</code>. */
-    @NotEmpty
-    private final String apiKey;
+  /**
+   * IBM Cloud API key. Reference a Camunda secret via <code>{{secrets.IBMQ_API_KEY}}</code>.
+   */
+  @NotEmpty
+  private final String apiKey;
 
-    /**
-     * IBM Quantum service base URL.
-     * Defaults to the IBM Quantum Platform endpoint.
-     */
-    @Builder.Default
-    private final String ibmqUrl = "https://quantum.cloud.ibm.com/api";
+  /**
+   * IBM Quantum service base URL.
+   * Defaults to the IBM Quantum Platform endpoint.
+   */
+  @Builder.Default
+  private final String ibmqUrl = "https://quantum.cloud.ibm.com/api";
 
-    /**
-     * IBM Quantum instance Cloud Resource Name (CRN).
-     * Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.
-     */
-    @NotEmpty
-    private final String ibmqInstance;
+  /**
+   * IBM Quantum instance Cloud Resource Name (CRN).
+   * Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.
+   */
+  @NotEmpty
+  private final String ibmqInstance;
 }

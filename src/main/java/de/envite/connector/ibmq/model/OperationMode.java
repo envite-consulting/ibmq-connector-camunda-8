@@ -12,6 +12,6 @@ package de.envite.connector.ibmq.model;
  * </ul>
  */
 public enum OperationMode {
-    SUBMIT_JOB,
-    GET_JOB_RESULT
+  SUBMIT_JOB,
+  GET_JOB_RESULT
 }

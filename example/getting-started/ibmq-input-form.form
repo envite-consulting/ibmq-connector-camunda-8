@@ -9,6 +9,7 @@
       "label": "IBM Quantum API Key",
       "description": "Store your IBM Quantum API key as a Camunda secret named IBMQ_API_KEY and reference it here.",
       "validate": { "required": true }
+      "defaultValue": "{{secrets.IBMQ_API_KEY}}",
     },
     {
       "type": "textfield",
@@ -22,6 +23,7 @@
       "label": "IBMQ Instance CRN",
       "description": "Cloud Resource Name (CRN). Find it in IBM Cloud → Resource list → your Quantum Computing instance → Details.",
       "validate": { "required": true }
+      "defaultValue": "{{secrets.IBMQ_INSTANCE}}",
     },
     {
       "type": "textfield",

@@ -23,3 +23,7 @@ buildNumber.properties
 .claude/
 
 application.properties
+/ibmq-connector-camunda-8.iml
+
+# Local secret overrides – never commit
+example/predefined-algorithms/.env

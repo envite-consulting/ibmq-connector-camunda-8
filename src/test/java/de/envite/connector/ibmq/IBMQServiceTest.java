@@ -1,10 +1,28 @@
 package de.envite.connector.ibmq;
 
+import static de.envite.connector.ibmq.IBMQConstants.API_PATH_JOBS;
+import static de.envite.connector.ibmq.IBMQConstants.API_PATH_RESULTS;
+import static de.envite.connector.ibmq.IBMQConstants.HEADER_IBM_API_VERSION;
+import static de.envite.connector.ibmq.IBMQConstants.HEADER_SERVICE_CRN;
+import static de.envite.connector.ibmq.IBMQConstants.IAM_TOKEN_URL;
+import static de.envite.connector.ibmq.IBMQConstants.IBM_API_VERSION;
+import static de.envite.connector.ibmq.IBMQConstants.PROGRAM_SAMPLER;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_COMPLETED;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_FAILED;
+import static de.envite.connector.ibmq.IBMQConstants.STATUS_QUEUED;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.client.ExpectedCount.manyTimes;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.envite.connector.ibmq.dto.IBMQConnectorResponseDto;
 import de.envite.connector.ibmq.dto.IBMQGetJobResultRequestDto;
 import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.envite.connector.ibmq.model.CircuitInputMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -15,296 +33,296 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
-import static de.envite.connector.ibmq.IBMQConstants.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.test.web.client.ExpectedCount.manyTimes;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 @Tag("service")
 class IBMQServiceTest {
 
-    private static final String SERVICE_URL   = "https://test.quantum-computing.ibm.com";
-    private static final String API_KEY       = "test-api-key";
-    private static final String ACCESS_TOKEN  = "test-access-token";
-    private static final String INSTANCE_CRN  = "crn:v1:bluemix:public:quantum-computing:us-east:a/test-account/test-instance::";
-    private static final String JOB_ID        = "test-job-123";
-    private static final String CIRCUIT       = "OPENQASM 3.0; include \"stdgates.inc\"; qubit[1] q; h q[0];";
+  private static final String SERVICE_URL = "https://test.quantum-computing.ibm.com";
+  private static final String API_KEY = "test-api-key";
+  private static final String ACCESS_TOKEN = "test-access-token";
+  private static final String INSTANCE_CRN =
+      "crn:v1:bluemix:public:quantum-computing:us-east:a/test-account/test-instance::";
+  private static final String JOB_ID = "test-job-123";
+  private static final String CIRCUIT =
+      "OPENQASM 3.0; include \"stdgates.inc\"; qubit[1] q; h q[0];";
 
-    private MockRestServiceServer mockServer;
-    private IBMQService service;
+  private MockRestServiceServer mockServer;
+  private IBMQService service;
 
-    @BeforeEach
-    void setUp() {
-        RestTemplate restTemplate = new RestTemplate();
-        mockServer = MockRestServiceServer.createServer(restTemplate);
-        ObjectMapper objectMapper = new ObjectMapper();
-        service = new IBMQService(new IBMQAuthenticator(restTemplate), new IBMQJobClient(restTemplate, objectMapper), new IBMQParameterHandler(objectMapper));
-    }
+  private static String jobResponse(String jobId) {
+    return """
+        {"id": "%s", "status": "QUEUED"}
+        """.formatted(jobId);
+  }
 
-    // -------------------------------------------------------------------------
-    // Happy-path: OPEN_QASM mode
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Happy-path: OPEN_QASM mode
+  // -------------------------------------------------------------------------
 
-    @Test
-    void executeCircuit_withOpenQasm_andNoWait_returnsQueuedStatus() {
-        expectIamTokenExchange();
-        expectJobSubmission();
+  private static String statusResponse(String status) {
+    return """
+        {"id": "%s", "status": "%s"}
+        """.formatted(JOB_ID, status);
+  }
 
-        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().waitForResult(false).build());
+  @BeforeEach
+  void setUp() {
+    RestTemplate restTemplate = new RestTemplate();
+    mockServer = MockRestServiceServer.createServer(restTemplate);
+    ObjectMapper objectMapper = new ObjectMapper();
+    service = new IBMQService(new IBMQAuthenticator(restTemplate),
+        new IBMQJobClient(restTemplate, objectMapper), new IBMQParameterHandler(objectMapper));
+  }
 
-        assertThat(result.getJobId()).isEqualTo(JOB_ID);
-        assertThat(result.getStatus()).isEqualTo(STATUS_QUEUED);
-        assertThat(result.getResult()).isNull();
-        mockServer.verify();
-    }
+  @Test
+  void executeCircuit_withOpenQasm_andNoWait_returnsQueuedStatus() {
+    expectIamTokenExchange();
+    expectJobSubmission();
 
-    @Test
-    void executeCircuit_withOpenQasm_andWaitForResult_returnsCompletedResult() {
-        expectIamTokenExchange();
-        expectJobSubmission();
-        expectJobStatus(STATUS_COMPLETED);
-        expectJobResults();
+    IBMQConnectorResponseDto result =
+        service.executeCircuit(openQasmRequest().waitForResult(false).build());
 
-        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().build());
+    assertThat(result.getJobId()).isEqualTo(JOB_ID);
+    assertThat(result.getStatus()).isEqualTo(STATUS_QUEUED);
+    assertThat(result.getResult()).isNull();
+    mockServer.verify();
+  }
 
-        assertThat(result.getJobId()).isEqualTo(JOB_ID);
-        assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
-        assertThat(result.getResult()).isNotNull();
-        mockServer.verify();
-    }
+  @Test
+  void executeCircuit_withOpenQasm_andWaitForResult_returnsCompletedResult() {
+    expectIamTokenExchange();
+    expectJobSubmission();
+    expectJobStatus(STATUS_COMPLETED);
+    expectJobResults();
 
-    @Test
-    void executeCircuit_withOpenQasm_andJobFails_returnsFailedStatusWithNullResult() {
-        expectIamTokenExchange();
-        expectJobSubmission();
-        expectJobStatus(STATUS_FAILED);
+    IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().build());
 
-        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().build());
+    assertThat(result.getJobId()).isEqualTo(JOB_ID);
+    assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
+    assertThat(result.getResult()).isNotNull();
+    mockServer.verify();
+  }
 
-        assertThat(result.getStatus()).isEqualTo(STATUS_FAILED);
-        assertThat(result.getResult()).isNull();
-        mockServer.verify();
-    }
+  // -------------------------------------------------------------------------
+  // Happy-path: DIRECT_PARAMS mode
+  // -------------------------------------------------------------------------
 
-    @Test
-    void executeCircuit_withOpenQasm_submitsCorrectPubStructure() {
-        expectIamTokenExchange();
-        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(content().json("""
-                        {
-                          "program_id": "sampler",
-                          "backend": "ibmq_qasm_simulator",
-                          "params": { "version": 2, "pubs": [["%s", null, 512]] }
-                        }
-                        """.formatted(CIRCUIT.replace("\"", "\\\""))))
-                .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
-        expectJobStatus(STATUS_COMPLETED);
-        expectJobResults();
+  @Test
+  void executeCircuit_withOpenQasm_andJobFails_returnsFailedStatusWithNullResult() {
+    expectIamTokenExchange();
+    expectJobSubmission();
+    expectJobStatus(STATUS_FAILED);
 
-        service.executeCircuit(openQasmRequest().shots(512).build());
+    IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().build());
 
-        mockServer.verify();
-    }
+    assertThat(result.getStatus()).isEqualTo(STATUS_FAILED);
+    assertThat(result.getResult()).isNull();
+    mockServer.verify();
+  }
 
-    // -------------------------------------------------------------------------
-    // Happy-path: DIRECT_PARAMS mode
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Polling: non-terminal status followed by terminal status
+  // -------------------------------------------------------------------------
 
-    @Test
-    void executeCircuit_withDirectParams_andNoWait_submitsCustomParams() {
-        String customParams = """
-                {"pubs": [["custom-circuit", null, 2048]]}
-                """;
-        expectIamTokenExchange();
-        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(content().json("{\"params\": {\"pubs\": [[\"custom-circuit\", null, 2048]]}}"))
-                .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
+  @Test
+  void executeCircuit_withOpenQasm_submitsCorrectPubStructure() {
+    expectIamTokenExchange();
+    mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(content().json("""
+            {
+              "program_id": "sampler",
+              "backend": "ibmq_qasm_simulator",
+              "params": { "version": 2, "pubs": [["%s", null, 512]] }
+            }
+            """.formatted(CIRCUIT.replace("\"", "\\\""))))
+        .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
+    expectJobStatus(STATUS_COMPLETED);
+    expectJobResults();
 
-        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest()
-                .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
-                .params(customParams)
-                .waitForResult(false)
-                .build());
+    service.executeCircuit(openQasmRequest().shots(512).build());
 
-        assertThat(result.getJobId()).isEqualTo(JOB_ID);
-        assertThat(result.getStatus()).isEqualTo(STATUS_QUEUED);
-        mockServer.verify();
-    }
+    mockServer.verify();
+  }
 
-    // -------------------------------------------------------------------------
-    // Polling: non-terminal status followed by terminal status
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Timeout
+  // -------------------------------------------------------------------------
 
-    @Test
-    void executeCircuit_withOpenQasm_andIntermediateRunningStatus_pollsUntilCompleted() {
-        expectIamTokenExchange();
-        expectJobSubmission();
-        expectJobStatus("RUNNING");
-        expectJobStatus(STATUS_COMPLETED);
-        expectJobResults();
+  @Test
+  void executeCircuit_withDirectParams_andNoWait_submitsCustomParams() {
+    String customParams = """
+        {"pubs": [["custom-circuit", null, 2048]]}
+        """;
+    expectIamTokenExchange();
+    mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(content().json("{\"params\": {\"pubs\": [[\"custom-circuit\", null, 2048]]}}"))
+        .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
 
-        IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest().pollIntervalSeconds(1).build());
+    IBMQConnectorResponseDto result = service.executeCircuit(openQasmRequest()
+        .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
+        .params(customParams)
+        .waitForResult(false)
+        .build());
 
-        assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
-        mockServer.verify();
-    }
+    assertThat(result.getJobId()).isEqualTo(JOB_ID);
+    assertThat(result.getStatus()).isEqualTo(STATUS_QUEUED);
+    mockServer.verify();
+  }
 
-    // -------------------------------------------------------------------------
-    // Timeout
-    // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Validation: DIRECT_PARAMS mode
+  // -------------------------------------------------------------------------
 
-    @Test
-    @Timeout(5)
-    void executeCircuit_whenJobDoesNotComplete_throwsTimeoutException() {
-        expectIamTokenExchange();
-        expectJobSubmission();
-        mockServer.expect(manyTimes(), requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(statusResponse("RUNNING"), MediaType.APPLICATION_JSON));
+  @Test
+  void executeCircuit_withOpenQasm_andIntermediateRunningStatus_pollsUntilCompleted() {
+    expectIamTokenExchange();
+    expectJobSubmission();
+    expectJobStatus("RUNNING");
+    expectJobStatus(STATUS_COMPLETED);
+    expectJobResults();
 
-        assertThatThrownBy(() -> service.executeCircuit(openQasmRequest().timeoutSeconds(1).pollIntervalSeconds(1).build()))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Timed out");
-    }
+    IBMQConnectorResponseDto result =
+        service.executeCircuit(openQasmRequest().pollIntervalSeconds(1).build());
 
-    // -------------------------------------------------------------------------
-    // Validation: DIRECT_PARAMS mode
-    // -------------------------------------------------------------------------
+    assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
+    mockServer.verify();
+  }
 
-    @Test
-    void executeCircuit_withDirectParams_andInvalidJson_throwsRuntimeException() {
-        expectIamTokenExchange();
+  // -------------------------------------------------------------------------
+  // Get job result
+  // -------------------------------------------------------------------------
 
-        assertThatThrownBy(() -> service.executeCircuit(openQasmRequest()
-                        .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
-                        .params("not-valid-json{{{")
-                        .build()))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("parse");
-    }
+  @Test
+  @Timeout(5)
+  void executeCircuit_whenJobDoesNotComplete_throwsTimeoutException() {
+    expectIamTokenExchange();
+    expectJobSubmission();
+    mockServer.expect(manyTimes(), requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess(statusResponse("RUNNING"), MediaType.APPLICATION_JSON));
 
-    // -------------------------------------------------------------------------
-    // Get job result
-    // -------------------------------------------------------------------------
+    assertThatThrownBy(() -> service.executeCircuit(
+        openQasmRequest().timeoutSeconds(1).pollIntervalSeconds(1).build()))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Timed out");
+  }
 
-    @Test
-    void getJobResult_whenJobCompleted_returnsResultPayload() {
-        expectIamTokenExchange();
-        expectJobStatus(STATUS_COMPLETED);
-        expectJobResults();
+  @Test
+  void executeCircuit_withDirectParams_andInvalidJson_throwsRuntimeException() {
+    expectIamTokenExchange();
 
-        IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
+    assertThatThrownBy(() -> service.executeCircuit(openQasmRequest()
+        .circuitInputMode(CircuitInputMode.DIRECT_PARAMS)
+        .params("not-valid-json{{{")
+        .build()))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("parse");
+  }
 
-        assertThat(result.getJobId()).isEqualTo(JOB_ID);
-        assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
-        assertThat(result.getResult()).isNotNull();
-        mockServer.verify();
-    }
+  @Test
+  void getJobResult_whenJobCompleted_returnsResultPayload() {
+    expectIamTokenExchange();
+    expectJobStatus(STATUS_COMPLETED);
+    expectJobResults();
 
-    @Test
-    void getJobResult_whenJobRunning_returnsStatusWithoutResult() {
-        expectIamTokenExchange();
-        expectJobStatus("RUNNING");
+    IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
 
-        IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
+    assertThat(result.getJobId()).isEqualTo(JOB_ID);
+    assertThat(result.getStatus()).isEqualTo(STATUS_COMPLETED);
+    assertThat(result.getResult()).isNotNull();
+    mockServer.verify();
+  }
 
-        assertThat(result.getJobId()).isEqualTo(JOB_ID);
-        assertThat(result.getStatus()).isEqualTo("RUNNING");
-        assertThat(result.getResult()).isNull();
-        mockServer.verify();
-    }
+  // -------------------------------------------------------------------------
+  // Helpers
+  // -------------------------------------------------------------------------
 
-    @Test
-    void getJobResult_whenJobFailed_returnsFailedStatusWithoutResult() {
-        expectIamTokenExchange();
-        expectJobStatus(STATUS_FAILED);
+  @Test
+  void getJobResult_whenJobRunning_returnsStatusWithoutResult() {
+    expectIamTokenExchange();
+    expectJobStatus("RUNNING");
 
-        IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
+    IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
 
-        assertThat(result.getStatus()).isEqualTo(STATUS_FAILED);
-        assertThat(result.getResult()).isNull();
-        mockServer.verify();
-    }
+    assertThat(result.getJobId()).isEqualTo(JOB_ID);
+    assertThat(result.getStatus()).isEqualTo("RUNNING");
+    assertThat(result.getResult()).isNull();
+    mockServer.verify();
+  }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
+  @Test
+  void getJobResult_whenJobFailed_returnsFailedStatusWithoutResult() {
+    expectIamTokenExchange();
+    expectJobStatus(STATUS_FAILED);
 
-    private void expectIamTokenExchange() {
-        mockServer.expect(requestTo(IAM_TOKEN_URL))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("apikey=" + API_KEY)))
-                .andRespond(withSuccess(
-                        "{\"access_token\": \"" + ACCESS_TOKEN + "\", \"expires_in\": 3600}",
-                        MediaType.APPLICATION_JSON));
-    }
+    IBMQConnectorResponseDto result = service.getJobResult(getJobResultRequest().build());
 
-    private void expectJobSubmission() {
-        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
-                .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
-                .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
-                .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
-    }
+    assertThat(result.getStatus()).isEqualTo(STATUS_FAILED);
+    assertThat(result.getResult()).isNull();
+    mockServer.verify();
+  }
 
-    private void expectJobStatus(String status) {
-        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID))
-                .andExpect(method(HttpMethod.GET))
-                .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
-                .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
-                .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
-                .andRespond(withSuccess(statusResponse(status), MediaType.APPLICATION_JSON));
-    }
+  private void expectIamTokenExchange() {
+    mockServer.expect(requestTo(IAM_TOKEN_URL))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(content().string(org.hamcrest.Matchers.containsString("apikey=" + API_KEY)))
+        .andRespond(withSuccess(
+            "{\"access_token\": \"" + ACCESS_TOKEN + "\", \"expires_in\": 3600}",
+            MediaType.APPLICATION_JSON));
+  }
 
-    private void expectJobResults() {
-        mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID + API_PATH_RESULTS))
-                .andExpect(method(HttpMethod.GET))
-                .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
-                .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
-                .andRespond(withSuccess(
-                        """
-                        {"quasi_dists": [{"0": 0.5, "1": 0.5}], "metadata": [{"shots": 1024}]}
-                        """,
-                        MediaType.APPLICATION_JSON));
-    }
+  private void expectJobSubmission() {
+    mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
+        .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
+        .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
+        .andRespond(withSuccess(jobResponse(JOB_ID), MediaType.APPLICATION_JSON));
+  }
 
-    private static String jobResponse(String jobId) {
-        return """
-                {"id": "%s", "status": "QUEUED"}
-                """.formatted(jobId);
-    }
+  private void expectJobStatus(String status) {
+    mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header("Authorization", "Bearer " + ACCESS_TOKEN))
+        .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
+        .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
+        .andRespond(withSuccess(statusResponse(status), MediaType.APPLICATION_JSON));
+  }
 
-    private static String statusResponse(String status) {
-        return """
-                {"id": "%s", "status": "%s"}
-                """.formatted(JOB_ID, status);
-    }
+  private void expectJobResults() {
+    mockServer.expect(requestTo(SERVICE_URL + API_PATH_JOBS + "/" + JOB_ID + API_PATH_RESULTS))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HEADER_SERVICE_CRN, INSTANCE_CRN))
+        .andExpect(header(HEADER_IBM_API_VERSION, IBM_API_VERSION))
+        .andRespond(withSuccess(
+            """
+                {"quasi_dists": [{"0": 0.5, "1": 0.5}], "metadata": [{"shots": 1024}]}
+                """,
+            MediaType.APPLICATION_JSON));
+  }
 
-    private IBMQSubmitJobRequestDto.IBMQSubmitJobRequestDtoBuilder<?, ?> openQasmRequest() {
-        return IBMQSubmitJobRequestDto.builder()
-                .apiKey(API_KEY)
-                .ibmqUrl(SERVICE_URL)
-                .ibmqInstance(INSTANCE_CRN)
-                .backend("ibmq_qasm_simulator")
-                .programId(PROGRAM_SAMPLER)
-                .circuitInputMode(CircuitInputMode.OPEN_QASM)
-                .circuit(CIRCUIT)
-                .shots(1024)
-                .waitForResult(true)
-                .timeoutSeconds(30)
-                .pollIntervalSeconds(1);
-    }
+  private IBMQSubmitJobRequestDto.IBMQSubmitJobRequestDtoBuilder<?, ?> openQasmRequest() {
+    return IBMQSubmitJobRequestDto.builder()
+        .apiKey(API_KEY)
+        .ibmqUrl(SERVICE_URL)
+        .ibmqInstance(INSTANCE_CRN)
+        .backend("ibmq_qasm_simulator")
+        .programId(PROGRAM_SAMPLER)
+        .circuitInputMode(CircuitInputMode.OPEN_QASM)
+        .circuit(CIRCUIT)
+        .shots(1024)
+        .waitForResult(true)
+        .timeoutSeconds(30)
+        .pollIntervalSeconds(1);
+  }
 
-    private IBMQGetJobResultRequestDto.IBMQGetJobResultRequestDtoBuilder<?, ?> getJobResultRequest() {
-        return IBMQGetJobResultRequestDto.builder()
-                .apiKey(API_KEY)
-                .ibmqUrl(SERVICE_URL)
-                .ibmqInstance(INSTANCE_CRN)
-                .jobId(JOB_ID);
-    }
+  private IBMQGetJobResultRequestDto.IBMQGetJobResultRequestDtoBuilder<?, ?> getJobResultRequest() {
+    return IBMQGetJobResultRequestDto.builder()
+        .apiKey(API_KEY)
+        .ibmqUrl(SERVICE_URL)
+        .ibmqInstance(INSTANCE_CRN)
+        .jobId(JOB_ID);
+  }
 }
