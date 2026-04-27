@@ -1,4 +1,6 @@
-# IBM Quantum Connector for Camunda 8 ⚛️
+<img align="right" width="100" src="./assets/envite_quantum_icon_transparent.png">
+
+# IBM Quantum Connector for Camunda 8 
 
 *Run quantum circuits from your BPMN workflow — on real IBM Quantum hardware 🚀*
 
@@ -40,6 +42,7 @@ To run the example, follow the steps under [How to Run](#-how-to-run), and then 
   * [Testing](#testing)
   * [Linting](#linting)
   * [IDE Setup](#ide-setup)
+* 📨 [Contact](#contact)
 
 ---
 
@@ -73,14 +76,14 @@ Download the latest `ibmq-connector-camunda-8-*.jar` from the [GitHub Releases](
 
 ```
 ibmq-connector/
-├── ibmq-connector-camunda-8-1.0.0.jar
+├── ibmq-connector-camunda-8-*.jar
 └── application.properties
 ```
 
 Then run:
 
 ```bash
-java -jar ibmq-connector-camunda-8-1.0.0.jar
+java -jar ibmq-connector-camunda-8-*.jar
 ```
 
 > **Note:** The element template `ibmq-connector.json` is also available as a release artifact — download it instead of fetching it from the repository.
@@ -209,12 +212,12 @@ Once active, violations appear as inline editor warnings and in the *Checkstyle*
 
 The IntelliJ code formatter (`Ctrl+Alt+L`) can be aligned with the Code style by importing the scheme via *Settings → Editor → Code Style → Java → ⚙ → Import Scheme → IntelliJ IDEA code style XML* and selecting [checkstyle_configuration.xml](checkstyle_configuration.xml), so auto-formatting produces compliant output.
 
-## License
 
-This project is developed under
+## 📨Contact
 
-[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](/LICENSE.md)
+If you have any questions or ideas feel free to start a [discussion](https://github.com/envite-consulting/ibmq-connector-camunda-8/discussions) or contact us via [mail](mailto:quantum-computing@envite.de).
 
-## Sponsors and Customers
+This open source project is being developed by [envite consulting GmbH](https://envite.de).
 
-[![sponsored](https://img.shields.io/badge/sponsoredBy-envite-g.svg)](https://envite.de/)
+![envite consulting GmbH](assets/envite-black.png#gh-light-mode-only)
+![envite consulting GmbH](assets/envite-white.png#gh-dark-mode-only)
