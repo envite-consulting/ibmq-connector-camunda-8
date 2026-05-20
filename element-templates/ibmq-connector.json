@@ -97,15 +97,8 @@
       "label": "IBMQ Backend",
       "description": "Target quantum computer for the execution",
       "group": "ibmq",
-      "type": "Dropdown",
-      "value": "ibmq_qasm_simulator",
-      "choices": [
-        { "name": "QASM Simulator",  "value": "ibmq_qasm_simulator" },
-        { "name": "IBM Brisbane",    "value": "ibm_brisbane" },
-        { "name": "IBM Kyoto",       "value": "ibm_kyoto" },
-        { "name": "IBM Osaka",       "value": "ibm_osaka" },
-        { "name": "Custom (FEEL)",   "value": "custom" }
-      ],
+      "type": "String",
+      "feel": "optional",
       "binding": { "type": "zeebe:input", "name": "backend" },
       "constraints": { "notEmpty": true },
       "condition": { "property": "operationMode", "equals": "SUBMIT_JOB" }
