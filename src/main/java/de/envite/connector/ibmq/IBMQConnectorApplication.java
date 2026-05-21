@@ -1,6 +1,6 @@
 package de.envite.connector.ibmq;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.boot.SpringApplication;
@@ -27,8 +27,8 @@ public class IBMQConnectorApplication {
 
   @Bean
   @Primary
-  public ObjectMapper objectMapper() {
-    return new ObjectMapper();
+  public JsonMapper objectMapper() {
+    return JsonMapper.builder().build();
   }
 
   @Bean

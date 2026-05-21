@@ -7,7 +7,8 @@ import static de.envite.connector.ibmq.IBMQConstants.IAM_GRANT_TYPE_VALUE;
 import static de.envite.connector.ibmq.IBMQConstants.IAM_TOKEN_URL;
 import static de.envite.connector.ibmq.util.HttpHelper.requireBody;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -31,6 +32,7 @@ import org.springframework.web.client.RestTemplate;
 public class IBMQAuthenticator {
 
   private final RestTemplate restTemplate;
+  private final JsonMapper jsonMapper;
 
   /**
    * Exchanges an IBM Cloud API key for an IAM bearer access token.
@@ -47,13 +49,17 @@ public class IBMQAuthenticator {
     body.add(IAM_APIKEY_KEY, apiKey);
 
     log.debug("[IBMQAuthenticator] Exchanging IBM Cloud API key for IAM access token");
-    ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+    ResponseEntity<String> response = restTemplate.postForEntity(
         IAM_TOKEN_URL,
         new HttpEntity<>(body, headers),
-        JsonNode.class
+        String.class
     );
 
-    JsonNode responseBody = requireBody(response, "IBM Cloud IAM token exchange");
-    return responseBody.get(IAM_ACCESS_TOKEN).asText();
+    try {
+      JsonNode responseBody = jsonMapper.readTree(requireBody(response, "IBM Cloud IAM token exchange"));
+      return responseBody.get(IAM_ACCESS_TOKEN).asText();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to parse IAM token response as JSON", e);
+    }
   }
 }
