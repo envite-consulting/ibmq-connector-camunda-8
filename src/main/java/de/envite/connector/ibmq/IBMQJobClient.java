@@ -16,9 +16,9 @@ import static de.envite.connector.ibmq.IBMQConstants.STATUS_ERROR;
 import static de.envite.connector.ibmq.IBMQConstants.STATUS_FAILED;
 import static de.envite.connector.ibmq.util.HttpHelper.requireBody;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 import de.envite.connector.ibmq.dto.IBMQBaseRequest;
 import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 import java.time.Instant;
@@ -49,7 +49,7 @@ public class IBMQJobClient {
       Set.of(STATUS_COMPLETED, STATUS_FAILED, STATUS_CANCELLED, STATUS_ERROR);
 
   private final RestTemplate restTemplate;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
   /**
    * Submits a Qiskit Runtime job and returns its assigned job ID.
@@ -60,20 +60,24 @@ public class IBMQJobClient {
    * @return the job ID assigned by the IBM Quantum runtime
    */
   public String submitJob(IBMQSubmitJobRequestDto request, String accessToken, JsonNode params) {
-    ObjectNode jobBody = objectMapper.createObjectNode();
+    ObjectNode jobBody = jsonMapper.createObjectNode();
     jobBody.put(FIELD_PROGRAM_ID, request.getProgramId());
     jobBody.put(FIELD_BACKEND, request.getBackend());
     jobBody.set(FIELD_PARAMS, params);
 
     log.debug("[IBMQJobClient] Submitting job: URL={}, backend={}, programId={}",
         request.getIbmqUrl() + API_PATH_JOBS, request.getBackend(), request.getProgramId());
-    ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+    ResponseEntity<String> response = restTemplate.postForEntity(
         request.getIbmqUrl() + API_PATH_JOBS,
         new HttpEntity<>(jobBody, apiHeaders(accessToken, request.getIbmqInstance())),
-        JsonNode.class
+        String.class
     );
 
-    return requireBody(response, "job submission").get(FIELD_ID).asText();
+    try {
+      return jsonMapper.readTree(requireBody(response, "job submission")).get(FIELD_ID).asText();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to parse job submission response as JSON", e);
+    }
   }
 
   /**
@@ -130,7 +134,7 @@ public class IBMQJobClient {
     }
 
     try {
-      return objectMapper.readTree(body);
+      return jsonMapper.readTree(body);
     } catch (Exception e) {
       throw new RuntimeException("Failed to parse job results as JSON", e);
     }
@@ -140,13 +144,17 @@ public class IBMQJobClient {
    * Fetches the current status of a job.
    */
   public String getJobStatus(IBMQBaseRequest request, String accessToken, String jobId) {
-    ResponseEntity<JsonNode> response = restTemplate.exchange(
+    ResponseEntity<String> response = restTemplate.exchange(
         request.getIbmqUrl() + API_PATH_JOBS + "/" + jobId,
         HttpMethod.GET,
         new HttpEntity<>(apiHeaders(accessToken, request.getIbmqInstance())),
-        JsonNode.class
+        String.class
     );
-    return requireBody(response, "job status").get(FIELD_STATUS).asText().toUpperCase();
+    try {
+      return jsonMapper.readTree(requireBody(response, "job status")).get(FIELD_STATUS).asText().toUpperCase();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to parse job status response as JSON", e);
+    }
   }
 
   private HttpHeaders apiHeaders(String accessToken, String instanceCrn) {

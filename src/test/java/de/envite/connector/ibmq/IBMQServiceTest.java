@@ -19,7 +19,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import de.envite.connector.ibmq.dto.IBMQConnectorResponseDto;
 import de.envite.connector.ibmq.dto.IBMQGetJobResultRequestDto;
 import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
@@ -69,9 +69,9 @@ class IBMQServiceTest {
   void setUp() {
     RestTemplate restTemplate = new RestTemplate();
     mockServer = MockRestServiceServer.createServer(restTemplate);
-    ObjectMapper objectMapper = new ObjectMapper();
-    service = new IBMQService(new IBMQAuthenticator(restTemplate),
-        new IBMQJobClient(restTemplate, objectMapper), new IBMQParameterHandler(objectMapper));
+    JsonMapper jsonMapper = JsonMapper.builder().build();
+    service = new IBMQService(new IBMQAuthenticator(restTemplate, jsonMapper),
+        new IBMQJobClient(restTemplate, jsonMapper), new IBMQParameterHandler(jsonMapper));
   }
 
   @Test

@@ -2,10 +2,10 @@ package de.envite.connector.ibmq;
 
 import static de.envite.connector.ibmq.IBMQConstants.FIELD_PUBS;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import de.envite.connector.ibmq.dto.IBMQSubmitJobRequestDto;
 import de.envite.connector.ibmq.model.CircuitInputMode;
 import lombok.AllArgsConstructor;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class IBMQParameterHandler {
 
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
   /**
    * Builds the job params {@link JsonNode} for the given request.
@@ -49,7 +49,7 @@ public class IBMQParameterHandler {
    * by most simulators and real backends via automatic up-conversion.</p>
    */
   private JsonNode buildOpenQasmParams(IBMQSubmitJobRequestDto request) {
-    ObjectNode params = objectMapper.createObjectNode();
+    ObjectNode params = jsonMapper.createObjectNode();
     params.put("version", 2);
     ArrayNode pubs = params.putArray(FIELD_PUBS);
 
@@ -64,7 +64,7 @@ public class IBMQParameterHandler {
 
   private JsonNode parseDirectParams(IBMQSubmitJobRequestDto request) {
     try {
-      return objectMapper.readTree(request.getParams());
+      return jsonMapper.readTree(request.getParams());
     } catch (Exception e) {
       throw new RuntimeException("Failed to parse 'params' as JSON: " + e.getMessage(), e);
     }
