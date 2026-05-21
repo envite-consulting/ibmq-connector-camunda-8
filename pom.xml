@@ -84,7 +84,7 @@
         <dependency>
             <groupId>io.camunda</groupId>
             <artifactId>camunda-process-test-spring</artifactId>
-            <version>8.8.16</version>
+            <version>${connector-sdk.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

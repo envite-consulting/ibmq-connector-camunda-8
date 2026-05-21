@@ -10,15 +10,16 @@ import static de.envite.connector.ibmq.IBMQConstants.PROGRAM_ESTIMATOR;
 import static de.envite.connector.ibmq.IBMQConstants.PROGRAM_SAMPLER;
 import static de.envite.connector.ibmq.IBMQConstants.STATUS_COMPLETED;
 import static de.envite.connector.ibmq.IBMQConstants.STATUS_QUEUED;
-import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static io.camunda.process.test.api.CamundaAssert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import io.camunda.client.CamundaClient;
 import io.camunda.client.api.response.ProcessInstanceEvent;
-import io.camunda.process.test.api.CamundaAssert;
 import io.camunda.process.test.api.CamundaSpringProcessTest;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -101,9 +102,7 @@ class IBMQWorkflowTest {
         Map.entry("pollIntervalSeconds", 1)
     ));
 
-    CamundaAssert.assertThatProcessInstance(instance)
-        .isCompleted()
-        .hasVariableNames("ibmqResult");
+    assertThat(instance).isCompleted().hasVariableNames("ibmqResult");
   }
 
   @Test
@@ -126,9 +125,8 @@ class IBMQWorkflowTest {
         Map.entry("pollIntervalSeconds", 1)
     ));
 
-    CamundaAssert.assertThatProcessInstance(instance)
-        .isCompleted()
-        .hasVariableNames("ibmqResult");
+    assertThat(instance).isCompleted().hasVariableNames("ibmqResult");
+
   }
 
   @Test
@@ -150,10 +148,8 @@ class IBMQWorkflowTest {
         Map.entry("pollIntervalSeconds", 1)
     ));
 
-    CamundaAssert.assertThatProcessInstance(instance)
-        .isCompleted()
-        .hasVariableSatisfies("ibmqResult", Map.class, result ->
-            assertThat(result.get("status")).isEqualTo(STATUS_QUEUED));
+    assertThat(instance).isCompleted().hasVariableSatisfies("ibmqResult", Map.class, result ->
+        assertThat(result.get("status")).isEqualTo(STATUS_QUEUED));
   }
 
   // -------------------------------------------------------------------------
