@@ -60,8 +60,6 @@ To run the example, follow the steps under [How to Run](#-how-to-run), and then 
 The connector reads its Camunda 8 connection details from environment variables.
 Copy `.env.example` to `.env` and fill in your cluster credentials:
 
-
-
 ```dotenv
 CAMUNDA_GRPC_ADDRESS=grpcs://<cluster-id>.<region>.zeebe.camunda.io:443
 CAMUNDA_REST_ADDRESS=https://<region>.zeebe.camunda.io/<cluster-id>
@@ -72,7 +70,7 @@ CAMUNDA_REGION=<region>
 ```
 
 By default, Camunda Saas Connector secrets are enabled in the `application.properties` file.
-When using environment variables instead toggle the following setting to `false`.
+When using environment variables instead, toggle the following setting to `false`.
 
 ```properties
 camunda.connector.secretprovider.console.enabled = true
@@ -85,18 +83,8 @@ camunda.connector.secretprovider.console.enabled = true
 Download the latest `ibmq-connector-camunda-8-*.jar` from the [GitHub Releases](https://github.com/envite-consulting/ibmq-connector-camunda-8/releases) page and place it in a directory alongside your `.env` file and run the JAR:
 
 ```bash
-# Linux / macOS
+# Linux / macOS /Git bash
 set -a && source .env && set +a
-java -jar ibmq-connector-camunda-8-*.jar
-```
-
-```powershell
-# Windows PowerShell
-Get-Content .env | ForEach-Object {
-    if ($_ -match '^\s*([^#][^=]*)=(.*)$') {
-        [System.Environment]::SetEnvironmentVariable($matches[1].Trim(), $matches[2].Trim())
-    }
-}
 java -jar ibmq-connector-camunda-8-*.jar
 ```
 
