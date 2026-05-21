@@ -26,4 +26,5 @@ application.properties
 /ibmq-connector-camunda-8.iml
 
 # Local secret overrides – never commit
+.env
 example/predefined-algorithms/.env

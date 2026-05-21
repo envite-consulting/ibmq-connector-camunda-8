@@ -57,15 +57,18 @@ To run the example, follow the steps under [How to Run](#-how-to-run), and then 
 
 ### 1. Configure the Connector
 
-Create an `application.properties` file with your Camunda 8 connection details:
+The connector reads its Camunda 8 connection details from environment variables.
+Copy `.env.example` to `.env` and fill in your cluster credentials:
 
-```properties
-camunda.client.grpc-address=grpcs://<cluster-id>.<region>.zeebe.camunda.io:443
-camunda.client.rest-address=https://<region>.zeebe.camunda.io/<cluster-id>
-camunda.client.auth.client-id=<your-client-id>
-camunda.client.auth.client-secret=<your-client-secret>
-camunda.client.cloud.cluster-id=<cluster-id>
-camunda.client.cloud.region=<region>
+
+
+```dotenv
+CAMUNDA_GRPC_ADDRESS=grpcs://<cluster-id>.<region>.zeebe.camunda.io:443
+CAMUNDA_REST_ADDRESS=https://<region>.zeebe.camunda.io/<cluster-id>
+CAMUNDA_CLIENT_ID=<your-client-id>
+CAMUNDA_CLIENT_SECRET=<your-client-secret>
+CAMUNDA_CLUSTER_ID=<cluster-id>
+CAMUNDA_REGION=<region>
 ```
 
 By default, Camunda Saas Connector secrets are enabled in the `application.properties` file.
@@ -79,17 +82,31 @@ camunda.connector.secretprovider.console.enabled = true
 
 **Option A — Pre-built JAR (recommended)**
 
-Download the latest `ibmq-connector-camunda-8-*.jar` from the [GitHub Releases](https://github.com/envite-consulting/ibmq-connector-camunda-8/releases) page and place it in a directory alongside your `application.properties` file:
-
-```
-ibmq-connector/
-├── ibmq-connector-camunda-8-*.jar
-└── application.properties
-```
-
-Then run:
+Download the latest `ibmq-connector-camunda-8-*.jar` from the [GitHub Releases](https://github.com/envite-consulting/ibmq-connector-camunda-8/releases) page and place it in a directory alongside your `.env` file and run the JAR:
 
 ```bash
+# Linux / macOS
+set -a && source .env && set +a
+java -jar ibmq-connector-camunda-8-*.jar
+```
+
+```powershell
+# Windows PowerShell
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^\s*([^#][^=]*)=(.*)$') {
+        [System.Environment]::SetEnvironmentVariable($matches[1].Trim(), $matches[2].Trim())
+    }
+}
+java -jar ibmq-connector-camunda-8-*.jar
+```
+
+Alternatively, pass each variable explicitly on the command line:
+
+```bash
+CAMUNDA_GRPC_ADDRESS=grpcs://... \
+CAMUNDA_CLIENT_ID=... \
+CAMUNDA_CLIENT_SECRET=... \
+... \
 java -jar ibmq-connector-camunda-8-*.jar
 ```
 
@@ -99,10 +116,9 @@ java -jar ibmq-connector-camunda-8-*.jar
 
 ```bash
 mvn package
+set -a && source .env && set +a
 java -jar target/ibmq-connector-camunda-8-*.jar
 ```
-
-When building from source, edit `src/main/resources/application.properties` directly before running.
 
 ---
 
