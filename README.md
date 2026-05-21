@@ -68,6 +68,13 @@ camunda.client.cloud.cluster-id=<cluster-id>
 camunda.client.cloud.region=<region>
 ```
 
+By default, Camunda Saas Connector secrets are enabled in the `application.properties` file.
+When using environment variables instead toggle the following setting to `false`.
+
+```properties
+camunda.connector.secretprovider.console.enabled = true
+```
+
 ### 2. Run the Connector
 
 **Option A — Pre-built JAR (recommended)**
